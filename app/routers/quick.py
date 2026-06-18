@@ -51,5 +51,8 @@ async def quick_lesson(req: QuickLessonRequest):
         page_count=req.end_page - req.start_page + 1,
     )
 
-    lesson = await asyncio.to_thread(generate_lesson, slot, session.pages, 1)
+    try:
+        lesson = await asyncio.to_thread(generate_lesson, slot, session.pages, 1)
+    except Exception as exc:
+        raise HTTPException(status_code=500, detail=str(exc))
     return lesson
