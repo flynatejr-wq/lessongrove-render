@@ -1,22 +1,11 @@
 import { useState } from 'react'
 
-const STANDARDS_OPTIONS = [
-  { value: '', label: 'No standards alignment' },
-  { value: 'US Common Core', label: 'US Common Core' },
-  { value: 'UK National Curriculum', label: 'UK National Curriculum' },
-  { value: 'Australian Curriculum v9', label: 'Australian Curriculum v9' },
-  { value: 'NZ Curriculum', label: 'NZ Curriculum' },
-  { value: 'IB MYP', label: 'IB MYP' },
-  { value: 'IB DP', label: 'IB DP' },
-]
-
-export default function CourseForm({ onSubmit, disabled, defaultScaffolding = 'standard', defaultStandards = '' }) {
+export default function CourseForm({ onSubmit, disabled, defaultScaffolding = 'standard' }) {
   const [weeks, setWeeks] = useState(16)
   const [sessionsPerWeek, setSessionsPerWeek] = useState(3)
   const [scaffolding, setScaffolding] = useState(defaultScaffolding)
-  const [standards, setStandards] = useState(defaultStandards)
   const [termStart, setTermStart] = useState('')
-  const [holidays, setHolidays] = useState('')  // comma-separated dates
+  const [holidays, setHolidays] = useState('')
   const totalSessions = weeks * sessionsPerWeek
 
   function handleSubmit(e) {
@@ -25,7 +14,7 @@ export default function CourseForm({ onSubmit, disabled, defaultScaffolding = 's
       .split(',')
       .map(d => d.trim())
       .filter(d => /^\d{4}-\d{2}-\d{2}$/.test(d))
-    onSubmit(weeks, sessionsPerWeek, scaffolding, standards || null, termStart || null, holidayList)
+    onSubmit(weeks, sessionsPerWeek, scaffolding, null, termStart || null, holidayList)
   }
 
   return (
@@ -85,22 +74,6 @@ export default function CourseForm({ onSubmit, disabled, defaultScaffolding = 's
           {scaffolding === 'standard' && 'Balanced mix of guided and independent work.'}
           {scaffolding === 'heavy' && 'Step-by-step instruction with worked examples.'}
         </p>
-      </div>
-
-      {/* Standards framework */}
-      <div className="pace-section">
-        <label className="section-label" htmlFor="standards-select">Curriculum standards</label>
-        <select
-          id="standards-select"
-          className="standards-select"
-          value={standards}
-          onChange={e => setStandards(e.target.value)}
-          disabled={disabled}
-        >
-          {STANDARDS_OPTIONS.map(opt => (
-            <option key={opt.value} value={opt.value}>{opt.label}</option>
-          ))}
-        </select>
       </div>
 
       {/* Optional: term start date */}

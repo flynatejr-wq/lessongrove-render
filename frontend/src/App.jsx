@@ -46,11 +46,10 @@ export default function App() {
   // Persisted settings
   const saved = loadSettings()
   const [scaffolding, setScaffolding] = useState(saved.scaffolding || 'standard')
-  const [standards, setStandards] = useState(saved.standards || '')
 
   useEffect(() => {
-    saveSettings({ scaffolding, standards })
-  }, [scaffolding, standards])
+    saveSettings({ scaffolding })
+  }, [scaffolding])
 
   function reset() {
     setMode(null); setFullStep('upload')
@@ -82,9 +81,8 @@ export default function App() {
     }
   }
 
-  async function handlePace(weeks, sessionsPerWeek, newScaffolding, newStandards, termStart, holidays) {
+  async function handlePace(weeks, sessionsPerWeek, newScaffolding, _standards, termStart, holidays) {
     setScaffolding(newScaffolding)
-    setStandards(newStandards || '')
     setFullStep('pacing'); setError(null); setCostEstimate(null)
     try {
       const data = await paceCurriculum(uploadData.session_id, weeks, sessionsPerWeek, termStart, holidays)
@@ -126,7 +124,7 @@ export default function App() {
           }
         },
         scaffolding,
-        standards || null,
+        null,
         hasExisting,  // resume=true if we already have some lessons
       )
     } catch (err) {
@@ -199,7 +197,7 @@ export default function App() {
         )}
 
         {mode === 'quick' && (
-          <QuickFlow onBack={reset} defaultScaffolding={scaffolding} defaultStandards={standards} />
+          <QuickFlow onBack={reset} defaultScaffolding={scaffolding} />
         )}
 
         {mode === 'full' && fullStep === 'upload' && (
@@ -246,7 +244,6 @@ export default function App() {
                   onSubmit={handlePace}
                   disabled={false}
                   defaultScaffolding={scaffolding}
-                  defaultStandards={standards}
                 />
                 {error && <p className="error-banner" role="alert" style={{ marginTop: 12 }}>{error}</p>}
               </aside>
@@ -280,7 +277,6 @@ export default function App() {
               onReset={reset}
               error={error}
               scaffolding={scaffolding}
-              standards={standards}
             />
           </>
         )}

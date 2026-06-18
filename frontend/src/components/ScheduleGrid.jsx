@@ -9,7 +9,7 @@ function formatDate(iso) {
 export default function ScheduleGrid({
   data, lessons, isGenerating, genProgress,
   onGenerateLessons, onViewLesson, onReset, error,
-  scaffolding, standards,
+  scaffolding,
 }) {
   const { filename, schedule } = data
   const { total_weeks, sessions_per_week, total_sessions, sessions } = schedule
@@ -42,7 +42,6 @@ export default function ScheduleGrid({
         <p className="step-sub">
           {filename} · {total_weeks} weeks · {sessions_per_week} session{sessions_per_week !== 1 ? 's' : ''} per week · {total_sessions} total
           {scaffolding && scaffolding !== 'standard' && <> · <span style={{ textTransform: 'capitalize' }}>{scaffolding}</span> support</>}
-          {standards && <> · {standards}</>}
         </p>
       </div>
 

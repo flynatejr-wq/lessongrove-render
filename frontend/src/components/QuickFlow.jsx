@@ -4,17 +4,7 @@ import StructureView from './StructureView.jsx'
 import LessonView from './LessonView.jsx'
 import { quickLesson } from '../api.js'
 
-const STANDARDS_OPTIONS = [
-  { value: '', label: 'No standards alignment' },
-  { value: 'US Common Core', label: 'US Common Core' },
-  { value: 'UK National Curriculum', label: 'UK National Curriculum' },
-  { value: 'Australian Curriculum v9', label: 'Australian Curriculum v9' },
-  { value: 'NZ Curriculum', label: 'NZ Curriculum' },
-  { value: 'IB MYP', label: 'IB MYP' },
-  { value: 'IB DP', label: 'IB DP' },
-]
-
-export default function QuickFlow({ onBack, defaultScaffolding = 'standard', defaultStandards = '' }) {
+export default function QuickFlow({ onBack, defaultScaffolding = 'standard' }) {
   const [step, setStep] = useState('upload')
   const [uploadData, setUploadData] = useState(null)
   const [selectedChapterIdx, setSelectedChapterIdx] = useState(null)
@@ -23,7 +13,6 @@ export default function QuickFlow({ onBack, defaultScaffolding = 'standard', def
   const [lesson, setLesson] = useState(null)
   const [error, setError] = useState(null)
   const [scaffolding, setScaffolding] = useState(defaultScaffolding)
-  const [standards, setStandards] = useState(defaultStandards)
 
   function handleUploadResult(result) {
     if (result.status === 'uploading') { setStep('uploading'); setError(null) }
@@ -58,7 +47,7 @@ export default function QuickFlow({ onBack, defaultScaffolding = 'standard', def
       const title = selectedChapterIdx !== null
         ? uploadData.structure.chapters[selectedChapterIdx]?.title
         : `Pages ${start}–${end}`
-      const result = await quickLesson(uploadData.session_id, start, end, title, scaffolding, standards || null)
+      const result = await quickLesson(uploadData.session_id, start, end, title, scaffolding, null)
       setLesson(result)
       setStep('result')
     } catch (err) {
@@ -164,19 +153,6 @@ export default function QuickFlow({ onBack, defaultScaffolding = 'standard', def
                   </button>
                 ))}
               </div>
-            </div>
-            <div className="quick-option-group">
-              <label className="section-label" htmlFor="quick-standards">Standards</label>
-              <select
-                id="quick-standards"
-                className="standards-select"
-                value={standards}
-                onChange={e => setStandards(e.target.value)}
-              >
-                {STANDARDS_OPTIONS.map(opt => (
-                  <option key={opt.value} value={opt.value}>{opt.label}</option>
-                ))}
-              </select>
             </div>
           </div>
 
