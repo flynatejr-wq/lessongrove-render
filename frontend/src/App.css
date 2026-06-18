@@ -132,6 +132,10 @@ body {
   backdrop-filter: blur(14px);
   -webkit-backdrop-filter: blur(14px);
   border-bottom: 1px solid var(--rule);
+  transition: background 0.2s, border-color 0.2s;
+}
+[data-theme="dark"] .header {
+  background: rgba(28,23,20,0.88);
 }
 .header-inner {
   max-width: 1040px; margin: 0 auto;
