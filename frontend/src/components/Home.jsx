@@ -1,4 +1,6 @@
-export default function Home({ onQuick, onFull }) {
+import { hasHistory } from '../history.js'
+
+export default function Home({ onQuick, onFull, onHistory }) {
   return (
     <div className="home">
       <div className="home-hero">
@@ -40,6 +42,14 @@ export default function Home({ onQuick, onFull }) {
           <span className="mode-cta" aria-hidden="true">Start planning →</span>
         </button>
       </div>
+
+      {hasHistory() && (
+        <div className="home-history-row">
+          <button className="btn-ghost" onClick={onHistory}>
+            ↩ View saved terms
+          </button>
+        </div>
+      )}
     </div>
   )
 }

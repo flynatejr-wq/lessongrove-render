@@ -113,20 +113,28 @@ class PaceResponse(BaseModel):
 
 # ── Phase 3: Lesson Plans ─────────────────────────────────────────────────────
 
+class LearningObjective(BaseModel):
+    text: str
+    page_ref: int | None = None
+
+
 class KeyConcept(BaseModel):
     term: str
     definition: str
+    page_ref: int | None = None
 
 
 class Activity(BaseModel):
     title: str
     description: str
     duration_minutes: int | None = None
+    page_ref: int | None = None
 
 
 class AssessmentQuestion(BaseModel):
     question: str
     type: str  # "discussion" | "written" | "short_answer"
+    page_ref: int | None = None
 
 
 class LessonFlag(BaseModel):
@@ -135,7 +143,7 @@ class LessonFlag(BaseModel):
 
 
 class LessonPlan(BaseModel):
-    schema_version: str = "1.0"
+    schema_version: str = "1.1"
     session_number: int
     week_number: int
     day_number: int
@@ -144,7 +152,7 @@ class LessonPlan(BaseModel):
     source_sections: list[str]
     scaffolding_level: str = "standard"   # "light" | "standard" | "heavy"
     standards_framework: str | None = None
-    learning_objectives: list[str]
+    learning_objectives: list[LearningObjective]
     key_concepts: list[KeyConcept]
     activities: list[Activity]
     assessment_questions: list[AssessmentQuestion]

@@ -6,9 +6,12 @@ import StructureView from './components/StructureView.jsx'
 import CourseForm from './components/CourseForm.jsx'
 import ScheduleGrid from './components/ScheduleGrid.jsx'
 import LessonView from './components/LessonView.jsx'
+import History from './components/History.jsx'
 import { paceCurriculum, generateLessons, updateStructure, getCostEstimate } from './api.js'
+import { saveTermToHistory } from './history.js'
 
 const SETTINGS_KEY = 'lessongrove_settings'
+const THEME_KEY = 'lessongrove_theme'
 
 function loadSettings() {
   try { return JSON.parse(localStorage.getItem(SETTINGS_KEY)) || {} }
@@ -17,6 +20,14 @@ function loadSettings() {
 
 function saveSettings(s) {
   try { localStorage.setItem(SETTINGS_KEY, JSON.stringify(s)) } catch {}
+}
+
+function getInitialTheme() {
+  try {
+    const stored = localStorage.getItem(THEME_KEY)
+    if (stored === 'dark' || stored === 'light') return stored
+  } catch {}
+  return window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light'
 }
 
 function LogoMark() {
@@ -30,7 +41,30 @@ function LogoMark() {
   )
 }
 
+function ThemeToggle({ theme, onToggle }) {
+  return (
+    <button
+      className="theme-toggle"
+      onClick={onToggle}
+      aria-label={theme === 'dark' ? 'Switch to light mode' : 'Switch to dark mode'}
+      title={theme === 'dark' ? 'Light mode' : 'Dark mode'}
+    >
+      {theme === 'dark' ? (
+        <svg width="16" height="16" viewBox="0 0 16 16" fill="none" aria-hidden="true">
+          <circle cx="8" cy="8" r="3.5" stroke="currentColor" strokeWidth="1.5"/>
+          <path d="M8 1v1.5M8 13.5V15M1 8h1.5M13.5 8H15M3.05 3.05l1.06 1.06M11.89 11.89l1.06 1.06M11.89 4.11l1.06-1.06M3.05 12.95l1.06-1.06" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round"/>
+        </svg>
+      ) : (
+        <svg width="16" height="16" viewBox="0 0 16 16" fill="none" aria-hidden="true">
+          <path d="M13.5 9.5A5.5 5.5 0 016.5 2.5a5.5 5.5 0 107 7z" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
+        </svg>
+      )}
+    </button>
+  )
+}
+
 export default function App() {
+  const [theme, setTheme] = useState(getInitialTheme)
   const [mode, setMode] = useState(null)
   const [fullStep, setFullStep] = useState('upload')
   const [uploadData, setUploadData] = useState(null)
@@ -43,13 +77,21 @@ export default function App() {
   const [costEstimate, setCostEstimate] = useState(null)
   const [structureSaving, setStructureSaving] = useState(false)
 
-  // Persisted settings
   const saved = loadSettings()
   const [scaffolding, setScaffolding] = useState(saved.scaffolding || 'standard')
 
   useEffect(() => {
+    document.documentElement.setAttribute('data-theme', theme)
+    try { localStorage.setItem(THEME_KEY, theme) } catch {}
+  }, [theme])
+
+  useEffect(() => {
     saveSettings({ scaffolding })
   }, [scaffolding])
+
+  function toggleTheme() {
+    setTheme(t => t === 'dark' ? 'light' : 'dark')
+  }
 
   function reset() {
     setMode(null); setFullStep('upload')
@@ -69,11 +111,7 @@ export default function App() {
     setStructureSaving(true); setError(null)
     try {
       await updateStructure(uploadData.session_id, chapters)
-      // Reflect changes locally so CourseForm can proceed with updated structure
-      setUploadData(prev => ({
-        ...prev,
-        structure: { ...prev.structure, chapters },
-      }))
+      setUploadData(prev => ({ ...prev, structure: { ...prev.structure, chapters } }))
     } catch (err) {
       setError(`Couldn't save structure: ${err.message}`)
     } finally {
@@ -87,13 +125,10 @@ export default function App() {
     try {
       const data = await paceCurriculum(uploadData.session_id, weeks, sessionsPerWeek, termStart, holidays)
       setScheduleData(data); setLessons({}); setGenProgress(null)
-
-      // Fetch cost estimate
       try {
         const est = await getCostEstimate(uploadData.session_id, data.schedule.total_sessions)
         setCostEstimate(est)
       } catch {}
-
       setFullStep('schedule')
     } catch (err) {
       setError(err.message); setFullStep('structure')
@@ -107,6 +142,7 @@ export default function App() {
     const total = scheduleData.schedule.total_sessions
     setGenProgress({ current: 0, total })
     const sseErrors = []
+    const newLessons = { ...lessons }
     try {
       await generateLessons(
         uploadData.session_id,
@@ -114,29 +150,43 @@ export default function App() {
           if (event.status === 'generating') {
             setGenProgress({ current: event.session_number, total: event.total_sessions })
           } else if (event.status === 'done' && event.lesson) {
+            newLessons[event.lesson.session_number] = event.lesson
             setLessons(prev => ({ ...prev, [event.lesson.session_number]: event.lesson }))
             setGenProgress({ current: event.session_number, total: event.total_sessions })
           } else if (event.status === 'skipped' && event.lesson) {
+            newLessons[event.lesson.session_number] = event.lesson
             setLessons(prev => ({ ...prev, [event.lesson.session_number]: event.lesson }))
           } else if (event.status === 'error') {
-            console.warn(`Lesson ${event.session_number} error:`, event.error)
             sseErrors.push(event.error)
           }
         },
         scaffolding,
         null,
-        hasExisting,  // resume=true if we already have some lessons
+        hasExisting,
       )
     } catch (err) {
       setError(err.message)
     } finally {
       setIsGenerating(false); setGenProgress(null)
       if (sseErrors.length > 0) {
-        const first = sseErrors[0]
         const msg = sseErrors.length === 1
-          ? `Lesson generation failed: ${first}`
-          : `${sseErrors.length} lessons failed. First error: ${first}`
+          ? `Lesson generation failed: ${sseErrors[0]}`
+          : `${sseErrors.length} lessons failed. First error: ${sseErrors[0]}`
         setError(msg)
+      }
+      // Auto-save to history when at least one lesson was generated
+      const allLessons = { ...lessons, ...newLessons }
+      if (Object.keys(allLessons).length > 0 && scheduleData) {
+        saveTermToHistory({
+          id: uploadData.session_id,
+          filename: uploadData.filename,
+          savedAt: new Date().toISOString(),
+          weeks: scheduleData.schedule.total_weeks,
+          sessionsPerWeek: scheduleData.schedule.sessions_per_week,
+          scaffolding,
+          schedule: scheduleData.schedule,
+          lessons: allLessons,
+        })
       }
     }
   }
@@ -149,10 +199,19 @@ export default function App() {
     setActiveLesson(null); setFullStep('schedule')
   }
 
-  // When a lesson is updated (regenerated section or flag), sync it back
   function handleLessonUpdate(updatedLesson) {
     setLessons(prev => ({ ...prev, [updatedLesson.session_number]: updatedLesson }))
     setActiveLesson(updatedLesson)
+  }
+
+  function handleRestoreTerm(term) {
+    // Restore a term from history into the schedule view
+    setUploadData({ session_id: term.id, filename: term.filename, structure: term.schedule })
+    setScheduleData({ filename: term.filename, schedule: term.schedule })
+    setLessons(term.lessons || {})
+    setScaffolding(term.scaffolding || 'standard')
+    setMode('full')
+    setFullStep('schedule')
   }
 
   const crumbs = [
@@ -187,13 +246,23 @@ export default function App() {
               ← Home
             </button>
           )}
+
+          <ThemeToggle theme={theme} onToggle={toggleTheme} />
         </div>
       </header>
 
       <main className="main" id="main-content">
 
         {mode === null && (
-          <Home onQuick={() => setMode('quick')} onFull={() => setMode('full')} />
+          <Home
+            onQuick={() => setMode('quick')}
+            onFull={() => setMode('full')}
+            onHistory={() => setMode('history')}
+          />
+        )}
+
+        {mode === 'history' && (
+          <History onRestoreTerm={handleRestoreTerm} onBack={reset} />
         )}
 
         {mode === 'quick' && (
@@ -228,7 +297,7 @@ export default function App() {
               <p className="step-kicker">Step 2 of 3 — Review detected structure</p>
               <h1 className="step-title">Does this look right?</h1>
               <p className="step-sub">
-                Check that LessonGrove found the right chapters. Click any chapter title to rename it, or merge adjacent chapters. Changes save to your session.
+                Check that LessonGrove found the right chapters. Click any chapter title to rename it, or merge adjacent chapters.
               </p>
               {structureSaving && <p className="step-saving">Saving…</p>}
             </div>
@@ -285,6 +354,7 @@ export default function App() {
           <LessonView
             lesson={activeLesson}
             onBack={handleBackToSchedule}
+            onLessonUpdate={handleLessonUpdate}
             sessionId={uploadData?.session_id}
           />
         )}

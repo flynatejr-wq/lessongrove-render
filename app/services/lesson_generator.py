@@ -1,7 +1,7 @@
 import json
 import anthropic
 from app.config import settings
-from app.schemas import LessonPlan, KeyConcept, Activity, AssessmentQuestion, SessionSlot, PageContent
+from app.schemas import LessonPlan, LearningObjective, KeyConcept, Activity, AssessmentQuestion, SessionSlot, PageContent
 
 _MAX_TEXT_CHARS = 60_000  # ~15k tokens — fits comfortably in claude-sonnet-4-6 context
 
@@ -70,10 +70,10 @@ _STANDARDS_INSTRUCTIONS = {
 _LESSON_SCHEMA = """
 {
   "title": "string — concise lesson title derived from the content",
-  "learning_objectives": ["string", "..."],
-  "key_concepts": [{"term": "string", "definition": "string"}, "..."],
-  "activities": [{"title": "string", "description": "string", "duration_minutes": integer_or_null}, "..."],
-  "assessment_questions": [{"question": "string", "type": "discussion|written|short_answer"}, "..."],
+  "learning_objectives": [{"text": "string", "page_ref": integer_or_null}, "..."],
+  "key_concepts": [{"term": "string", "definition": "string", "page_ref": integer_or_null}, "..."],
+  "activities": [{"title": "string", "description": "string", "duration_minutes": integer_or_null, "page_ref": integer_or_null}, "..."],
+  "assessment_questions": [{"question": "string", "type": "discussion|written|short_answer", "page_ref": integer_or_null}, "..."],
   "homework": "string or null"
 }
 """
@@ -102,7 +102,7 @@ INSTRUCTIONS
 5. Include 2–4 classroom activities with realistic time estimates.
 6. Include 4–6 assessment questions. Mark discussion questions as "discussion", written prompts as "written", recall/comprehension as "short_answer".
 7. Optionally include one homework assignment grounded in the text, or null.
-8. Reference page numbers in activity and assessment descriptions where relevant.
+8. For EVERY item in learning_objectives, activities, and assessment_questions, set page_ref to the exact page number in the excerpt where that content appears. If it spans multiple pages, use the first. If unsure, use null.
 9. Apply the scaffolding level above consistently across all sections.
 
 Return ONLY valid JSON matching this schema exactly — no markdown fences, no extra text:
@@ -134,10 +134,10 @@ Return ONLY valid JSON for that section — no markdown fences, no extra text.
 """
 
 _SECTION_SCHEMAS = {
-    "learning_objectives": '{"learning_objectives": ["string", "..."]}',
-    "key_concepts": '{"key_concepts": [{"term": "string", "definition": "string"}, "..."]}',
-    "activities": '{"activities": [{"title": "string", "description": "string", "duration_minutes": integer_or_null}, "..."]}',
-    "assessment_questions": '{"assessment_questions": [{"question": "string", "type": "discussion|written|short_answer"}, "..."]}',
+    "learning_objectives": '{"learning_objectives": [{"text": "string", "page_ref": integer_or_null}, "..."]}',
+    "key_concepts": '{"key_concepts": [{"term": "string", "definition": "string", "page_ref": integer_or_null}, "..."]}',
+    "activities": '{"activities": [{"title": "string", "description": "string", "duration_minutes": integer_or_null, "page_ref": integer_or_null}, "..."]}',
+    "assessment_questions": '{"assessment_questions": [{"question": "string", "type": "discussion|written|short_answer", "page_ref": integer_or_null}, "..."]}',
     "homework": '{"homework": "string or null"}',
 }
 
@@ -193,8 +193,14 @@ def generate_lesson(
 
     data = json.loads(raw)
 
+    raw_objs = data.get("learning_objectives", [])
+    objectives = [
+        LearningObjective(text=o) if isinstance(o, str) else LearningObjective(**o)
+        for o in raw_objs
+    ]
+
     return LessonPlan(
-        schema_version="1.0",
+        schema_version="1.1",
         session_number=slot.session_number,
         week_number=slot.week_number,
         day_number=slot.day_number,
@@ -203,7 +209,7 @@ def generate_lesson(
         source_sections=[u.title for u in slot.units],
         scaffolding_level=scaffolding_level,
         standards_framework=standards_framework,
-        learning_objectives=data.get("learning_objectives", []),
+        learning_objectives=objectives,
         key_concepts=[KeyConcept(**kc) for kc in data.get("key_concepts", [])],
         activities=[Activity(**a) for a in data.get("activities", [])],
         assessment_questions=[AssessmentQuestion(**q) for q in data.get("assessment_questions", [])],

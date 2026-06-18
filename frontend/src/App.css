@@ -39,6 +39,35 @@
   --font-body:    'DM Sans', system-ui, sans-serif;
 }
 
+/* ── Dark mode token overrides ───────────────────────────────── */
+[data-theme="dark"] {
+  --terra:      #e07a4d;
+  --terra-dk:   #c4622e;
+  --terra-10:   rgba(224,122,77,0.12);
+  --terra-20:   rgba(224,122,77,0.22);
+  --terra-05:   rgba(224,122,77,0.06);
+
+  --ember:      #f0a070;
+
+  --earth:      #f4ede6;
+  --fog:        #1c1714;
+  --fog-dk:     #221b17;
+  --bark:       #a89a92;
+  --rule:       #332821;
+  --rule-md:    #4a3828;
+
+  --card:       #262019;
+  --card-hover: #2e2820;
+
+  --tx-1:       #f4ede6;
+  --tx-2:       #c4b9b0;
+  --tx-3:       #a89a92;
+
+  --shadow-sm:  0 1px 3px rgba(0,0,0,0.25), 0 1px 2px rgba(0,0,0,0.18);
+  --shadow-md:  0 4px 14px rgba(0,0,0,0.35), 0 2px 4px rgba(0,0,0,0.22);
+  --shadow-lg:  0 8px 28px rgba(0,0,0,0.45), 0 4px 8px rgba(0,0,0,0.28);
+}
+
 *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
 
 html { font-family: var(--font-body); -webkit-font-smoothing: antialiased; }
@@ -51,6 +80,11 @@ body {
   line-height: 1.6;
   min-height: 100vh;
   overflow-x: hidden;
+  transition: background-color 0.2s, color 0.2s;
+}
+
+[data-theme="dark"] body {
+  background-image: radial-gradient(circle, rgba(224,122,77,0.04) 1px, transparent 1px);
 }
 
 /* Warm radial washes */
@@ -61,6 +95,12 @@ body {
     radial-gradient(ellipse 65% 55% at 15% 8%, rgba(181,86,47,0.07) 0%, transparent 65%),
     radial-gradient(ellipse 55% 65% at 88% 92%, rgba(224,122,77,0.05) 0%, transparent 65%);
   pointer-events: none; z-index: 0;
+}
+
+[data-theme="dark"] #root::before {
+  background:
+    radial-gradient(ellipse 65% 55% at 15% 8%, rgba(224,122,77,0.04) 0%, transparent 65%),
+    radial-gradient(ellipse 55% 65% at 88% 92%, rgba(181,86,47,0.03) 0%, transparent 65%);
 }
 
 ::-webkit-scrollbar { width: 6px; height: 6px; }
@@ -118,6 +158,7 @@ body {
 /* Home link in header */
 .header-home-btn {
   margin-left: auto;
+  margin-right: 8px;
   background: none; border: none;
   font-family: var(--font-body);
   font-size: 13px; font-weight: 500;
@@ -954,6 +995,21 @@ body {
 /* ── Warnings ────────────────────────────────────────────────── */
 .warnings { display: flex; flex-direction: column; gap: 8px; margin: 12px 0; }
 
+/* ── Theme toggle ────────────────────────────────────────────── */
+.theme-toggle {
+  margin-left: auto;
+  width: 32px; height: 32px;
+  display: flex; align-items: center; justify-content: center;
+  background: none;
+  border: 1px solid var(--rule);
+  border-radius: var(--radius-sm);
+  color: var(--tx-3); cursor: pointer;
+  transition: color 0.15s, border-color 0.15s, background 0.15s;
+  flex-shrink: 0;
+}
+.theme-toggle:hover { color: var(--terra); border-color: var(--terra); background: var(--terra-05); }
+.theme-toggle:focus-visible { outline: 3px solid var(--terra); outline-offset: 2px; }
+
 /* ── Scaffolding dial ────────────────────────────────────────── */
 .scaffold-dial {
   display: inline-flex;
@@ -1234,30 +1290,144 @@ body {
 }
 .quick-option-group { display: flex; flex-direction: column; gap: 6px; }
 
-/* ── Print styles (improved) ─────────────────────────────────── */
+/* ── Source citations ────────────────────────────────────────── */
+.source-cite {
+  display: inline-flex; align-items: center;
+  font-size: 10px; font-weight: 500;
+  color: var(--terra);
+  background: var(--terra-05);
+  border: 1px solid var(--terra-10);
+  border-radius: 4px;
+  padding: 1px 5px;
+  margin-left: 7px;
+  white-space: nowrap;
+  vertical-align: middle;
+  font-variant-numeric: tabular-nums;
+  opacity: 0.85;
+}
+.source-cite::before { content: '⌁ '; font-size: 9px; }
+
+/* ── History view ────────────────────────────────────────────── */
+.history-view { animation: fadeUp 0.4s ease both; max-width: 720px; }
+
+.history-search-wrap { margin-bottom: 20px; }
+.history-search {
+  width: 100%; padding: 10px 14px;
+  background: var(--card);
+  border: 1px solid var(--rule);
+  border-radius: var(--radius);
+  font-family: var(--font-body);
+  font-size: 14px; color: var(--tx-1);
+  box-shadow: var(--shadow-sm);
+  transition: border-color 0.15s, box-shadow 0.15s;
+}
+.history-search:focus {
+  outline: none;
+  border-color: var(--terra);
+  box-shadow: 0 0 0 3px var(--terra-10);
+}
+.history-search::placeholder { color: var(--tx-3); }
+
+.history-empty {
+  padding: 40px 24px;
+  text-align: center;
+  color: var(--tx-3);
+  font-size: 14px;
+  border: 1.5px dashed var(--rule);
+  border-radius: var(--radius);
+}
+
+.history-list { display: flex; flex-direction: column; gap: 8px; }
+
+.history-card {
+  display: flex; align-items: center; gap: 12px;
+  background: var(--card);
+  border: 1px solid var(--rule);
+  border-left: 3px solid var(--terra);
+  border-radius: var(--radius);
+  padding: 14px 16px;
+  cursor: pointer;
+  box-shadow: var(--shadow-sm);
+  transition: box-shadow 0.15s, border-color 0.15s;
+}
+.history-card:hover { box-shadow: var(--shadow-md); border-color: var(--rule-md); }
+.history-card:focus-visible { outline: 3px solid var(--terra); outline-offset: 2px; }
+
+.history-card-main { flex: 1; display: flex; flex-direction: column; gap: 3px; }
+.history-filename { font-size: 14px; font-weight: 600; color: var(--tx-1); }
+.history-meta { font-size: 12px; color: var(--tx-3); }
+.history-date { font-size: 11px; color: var(--tx-3); }
+
+.history-card-actions { flex-shrink: 0; }
+.history-delete-btn {
+  background: none; border: none;
+  color: var(--tx-3); cursor: pointer;
+  font-size: 13px; padding: 4px 8px;
+  border-radius: 4px;
+  transition: color 0.12s, background 0.12s;
+}
+.history-delete-btn:hover { color: #b83c1c; background: rgba(184,60,28,0.08); }
+
+.home-history-row {
+  text-align: center;
+  margin-top: 24px;
+}
+
+/* ── Print styles (first-class) ──────────────────────────────── */
 @media print {
-  .header, .breadcrumb, .header-home-btn,
+  .header, .breadcrumb, .header-home-btn, .theme-toggle,
   .lesson-aside-left, .lesson-aside-right,
   .schedule-controls, .flag-section,
   .regen-btn, .regen-wrap, .regen-err,
   .cost-estimate-banner { display: none !important; }
 
-  body { background: #fff !important; background-image: none !important; font-size: 11pt !important; }
+  html, body {
+    background: #fff !important;
+    background-image: none !important;
+    color: #111 !important;
+    font-size: 11pt !important;
+  }
   #root::before { display: none !important; }
+
+  .app { min-height: unset !important; }
+  .main { padding: 0 !important; max-width: 100% !important; }
 
   .lesson-layout { display: block !important; }
   .lesson-content { border: none !important; padding: 0 !important; }
-  .lesson-title { font-size: 22pt !important; }
-  .lesson-page-range { font-size: 9pt !important; margin-bottom: 16pt !important; }
-  .lesson-body { gap: 18pt !important; }
-  .lesson-section-heading { font-size: 7pt !important; }
-  .lesson-objectives li, .concept-def, .activity-desc, .question-text, .lesson-homework { font-size: 10pt !important; }
 
-  .activity-card, .concept-row { page-break-inside: avoid; }
+  .lesson-title {
+    font-size: 22pt !important;
+    color: #111 !important;
+    margin-bottom: 4pt !important;
+  }
+  .lesson-page-range {
+    font-size: 9pt !important; color: #666 !important;
+    margin-bottom: 18pt !important; padding-bottom: 12pt !important;
+    border-bottom: 1pt solid #ddd !important;
+  }
+
+  .lesson-body { gap: 16pt !important; }
+
   .lesson-section { page-break-inside: avoid; }
-  .lesson-section-hdr { margin-bottom: 6pt !important; }
+  .lesson-section-hdr { margin-bottom: 5pt !important; }
+  .lesson-section-heading {
+    font-size: 7pt !important; color: #b5562f !important;
+    letter-spacing: 0.1em !important;
+    border-bottom: 0.5pt solid #e0c8be !important;
+    padding-bottom: 3pt !important;
+    margin-bottom: 6pt !important;
+  }
 
-  .lesson-action-btn { display: none !important; }
-  .lesson-session-badge { border: 1px solid #ccc !important; background: none !important; }
-  .sg-status--ready { background: none !important; border: 1px solid #ccc !important; }
+  .lesson-objectives li, .activity-desc, .question-text, .lesson-homework { font-size: 10pt !important; line-height: 1.5 !important; }
+  .concept-term { font-size: 10pt !important; }
+  .concept-def { font-size: 10pt !important; }
+
+  .activity-card, .concept-row { page-break-inside: avoid; box-shadow: none !important; border: 0.5pt solid #ddd !important; }
+  .activity-card-header { margin-bottom: 3pt !important; }
+
+  .source-cite { border: 0.5pt solid #ccc !important; background: none !important; color: #888 !important; }
+
+  .lesson-session-badge { border: 0.5pt solid #ccc !important; background: none !important; color: #666 !important; }
+  .question-type { border: 0.5pt solid #ccc !important; background: none !important; color: #666 !important; }
+  .activity-duration { background: none !important; border: 0.5pt solid #ccc !important; }
 }

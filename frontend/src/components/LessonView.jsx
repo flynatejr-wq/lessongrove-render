@@ -179,7 +179,16 @@ export default function LessonView({ lesson: initialLesson, onBack, isQuick = fa
                   <RegenerateBtn label="learning objectives" section="learning_objectives" {...regenProps} />
                 </div>
                 <ul className="lesson-objectives">
-                  {lesson.learning_objectives.map((obj, i) => <li key={i}>{obj}</li>)}
+                  {lesson.learning_objectives.map((obj, i) => {
+                    const text = typeof obj === 'string' ? obj : obj.text
+                    const ref = typeof obj === 'string' ? null : obj.page_ref
+                    return (
+                      <li key={i}>
+                        {text}
+                        {ref && <span className="source-cite">p. {ref}</span>}
+                      </li>
+                    )
+                  })}
                 </ul>
               </section>
             )}
@@ -193,7 +202,10 @@ export default function LessonView({ lesson: initialLesson, onBack, isQuick = fa
                 <dl className="concept-list">
                   {lesson.key_concepts.map((kc, i) => (
                     <div key={i} className="concept-row">
-                      <dt className="concept-term">{kc.term}</dt>
+                      <dt className="concept-term">
+                        {kc.term}
+                        {kc.page_ref && <span className="source-cite">p. {kc.page_ref}</span>}
+                      </dt>
                       <dd className="concept-def">{kc.definition}</dd>
                     </div>
                   ))}
@@ -212,7 +224,10 @@ export default function LessonView({ lesson: initialLesson, onBack, isQuick = fa
                     <div key={i} className="activity-card">
                       <div className="activity-card-header">
                         <span className="activity-title">{act.title}</span>
-                        {act.duration_minutes && <span className="activity-duration">{act.duration_minutes} min</span>}
+                        <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                          {act.duration_minutes && <span className="activity-duration">{act.duration_minutes} min</span>}
+                          {act.page_ref && <span className="source-cite">p. {act.page_ref}</span>}
+                        </div>
                       </div>
                       <p className="activity-desc">{act.description}</p>
                     </div>
@@ -231,7 +246,10 @@ export default function LessonView({ lesson: initialLesson, onBack, isQuick = fa
                   {lesson.assessment_questions.map((q, i) => (
                     <li key={i} className="question-item">
                       <span className="question-text">{q.question}</span>
-                      <span className={`question-type question-type--${q.type}`}>{q.type.replace('_', ' ')}</span>
+                      <div style={{ display: 'flex', alignItems: 'center', gap: 6, flexShrink: 0 }}>
+                        <span className={`question-type question-type--${q.type}`}>{q.type.replace('_', ' ')}</span>
+                        {q.page_ref && <span className="source-cite">p. {q.page_ref}</span>}
+                      </div>
                     </li>
                   ))}
                 </ol>
