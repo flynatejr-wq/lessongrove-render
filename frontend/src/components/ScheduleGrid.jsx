@@ -1,11 +1,19 @@
+const DAY_NAMES = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun']
+
+function formatDate(iso) {
+  if (!iso) return null
+  const d = new Date(iso + 'T00:00:00')
+  return d.toLocaleDateString('en-GB', { day: 'numeric', month: 'short' })
+}
+
 export default function ScheduleGrid({
   data, lessons, isGenerating, genProgress,
   onGenerateLessons, onViewLesson, onReset, error,
+  scaffolding, standards,
 }) {
   const { filename, schedule } = data
   const { total_weeks, sessions_per_week, total_sessions, sessions } = schedule
 
-  // Group sessions by week
   const byWeek = {}
   for (const slot of sessions) {
     if (!byWeek[slot.week_number]) byWeek[slot.week_number] = {}
@@ -17,15 +25,14 @@ export default function ScheduleGrid({
     ? Math.round((genProgress.current / genProgress.total) * 100)
     : doneCount > 0 ? Math.round((doneCount / total_sessions) * 100) : 0
 
+  const dayNums = [...new Set(sessions.map(s => s.day_number))].sort((a, b) => a - b)
+  const gridCols = `64px repeat(${dayNums.length}, minmax(130px, 1fr))`
+
   const dayLabel = d => sessions_per_week === 5
-    ? ['Mon', 'Tue', 'Wed', 'Thu', 'Fri'][d - 1] ?? `Day ${d}`
+    ? DAY_NAMES[d - 1] ?? `Day ${d}`
     : `Day ${d}`
 
-  // Collect all day numbers actually used
-  const dayNums = [...new Set(sessions.map(s => s.day_number))].sort((a, b) => a - b)
-
-  // grid-template-columns: week-label + one col per day
-  const gridCols = `64px repeat(${dayNums.length}, minmax(130px, 1fr))`
+  const hasRemaining = doneCount < total_sessions && !isGenerating
 
   return (
     <div className="schedule-step">
@@ -34,13 +41,15 @@ export default function ScheduleGrid({
         <h2 className="step-title">Your curriculum schedule</h2>
         <p className="step-sub">
           {filename} · {total_weeks} weeks · {sessions_per_week} session{sessions_per_week !== 1 ? 's' : ''} per week · {total_sessions} total
+          {scaffolding && scaffolding !== 'standard' && <> · <span style={{ textTransform: 'capitalize' }}>{scaffolding}</span> support</>}
+          {standards && <> · {standards}</>}
         </p>
       </div>
 
       <div className="schedule-controls">
-        {doneCount < total_sessions && !isGenerating && (
+        {hasRemaining && (
           <button className="btn-primary" onClick={onGenerateLessons}>
-            {doneCount > 0 ? `Generate remaining (${total_sessions - doneCount})` : 'Generate all lesson plans'} →
+            {doneCount > 0 ? `Resume generation (${total_sessions - doneCount} remaining)` : 'Generate all lesson plans'} →
           </button>
         )}
 
@@ -83,20 +92,25 @@ export default function ScheduleGrid({
           role="grid"
           aria-label="Curriculum schedule"
         >
-          {/* Header row */}
           <div className="sg-corner" role="rowheader" />
           {dayNums.map(d => (
             <div key={d} className="sg-day-header" role="columnheader">{dayLabel(d)}</div>
           ))}
 
-          {/* Week rows */}
           {Array.from({ length: total_weeks }, (_, wi) => {
             const weekNum = wi + 1
             const weekSlots = byWeek[weekNum] || {}
+            const firstSlotWithDate = dayNums.map(d => weekSlots[d]).find(s => s?.session_date)
+            const weekDate = firstSlotWithDate?.session_date
+              ? new Date(firstSlotWithDate.session_date + 'T00:00:00') : null
+            const weekLabel = weekDate
+              ? weekDate.toLocaleDateString('en-GB', { month: 'short', day: 'numeric' }) : null
+
             return (
               <div key={weekNum} role="row" style={{ display: 'contents' }}>
                 <div className="sg-week-label" role="rowheader">
-                  Wk {weekNum}
+                  <span>Wk {weekNum}</span>
+                  {weekLabel && <span className="sg-week-date">{weekLabel}</span>}
                 </div>
                 {dayNums.map(d => {
                   const slot = weekSlots[d]
@@ -111,6 +125,7 @@ export default function ScheduleGrid({
                   const generating = isGenerating && genProgress?.current === slot.session_number
                   const chapterNames = slot.units.map(u => u.title).join(', ')
                   const truncated = chapterNames.length > 38 ? chapterNames.slice(0, 36) + '…' : chapterNames
+                  const slotDate = slot.session_date ? formatDate(slot.session_date) : null
 
                   return (
                     <div
@@ -119,6 +134,7 @@ export default function ScheduleGrid({
                         'sg-cell',
                         lesson && 'sg-cell--clickable',
                         generating && 'sg-cell--generating',
+                        lesson?.flags?.length > 0 && 'sg-cell--flagged',
                       ].filter(Boolean).join(' ')}
                       role="gridcell"
                       tabIndex={lesson ? 0 : -1}
@@ -127,10 +143,13 @@ export default function ScheduleGrid({
                       aria-label={`Session ${slot.session_number}: ${chapterNames}, pp. ${slot.start_page}–${slot.end_page}${lesson ? ' — lesson ready' : generating ? ' — generating' : ''}`}
                     >
                       <span className="sg-cell-session">S{slot.session_number}</span>
+                      {slotDate && <span className="sg-cell-date">{slotDate}</span>}
                       <span className="sg-cell-content">{truncated}</span>
                       <span className="sg-cell-pages">pp. {slot.start_page}–{slot.end_page}</span>
-                      {lesson && (
-                        <span className="sg-cell-status sg-status--ready" aria-hidden="true">Ready</span>
+                      {lesson && !generating && (
+                        <span className="sg-cell-status sg-status--ready" aria-hidden="true">
+                          {lesson.flags?.length > 0 ? '⚑ Ready' : 'Ready'}
+                        </span>
                       )}
                       {generating && !lesson && (
                         <span className="sg-cell-status sg-status--generating" aria-hidden="true">Writing…</span>

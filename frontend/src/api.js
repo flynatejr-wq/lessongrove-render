@@ -16,19 +16,25 @@ export async function uploadPDF(file) {
   return handleResponse(await fetch(`${BASE_URL}/upload`, { method: 'POST', body: form }))
 }
 
-export async function paceCurriculum(sessionId, totalWeeks, sessionsPerWeek) {
+export async function paceCurriculum(sessionId, totalWeeks, sessionsPerWeek, termStartDate = null, holidays = []) {
   return handleResponse(await fetch(`${BASE_URL}/pace`, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ session_id: sessionId, total_weeks: totalWeeks, sessions_per_week: sessionsPerWeek }),
+    body: JSON.stringify({
+      session_id: sessionId,
+      total_weeks: totalWeeks,
+      sessions_per_week: sessionsPerWeek,
+      term_start_date: termStartDate,
+      holidays,
+    }),
   }))
 }
 
-export async function generateLessons(sessionId, onProgress) {
+export async function generateLessons(sessionId, onProgress, scaffolding = 'standard', standards = null, resume = false) {
   const res = await fetch(`${BASE_URL}/generate`, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ session_id: sessionId }),
+    body: JSON.stringify({ session_id: sessionId, scaffolding, standards, resume }),
   })
   if (!res.ok) {
     let msg
@@ -54,10 +60,42 @@ export async function generateLessons(sessionId, onProgress) {
   }
 }
 
-export async function quickLesson(sessionId, startPage, endPage, title = 'Quick Lesson') {
+export async function quickLesson(sessionId, startPage, endPage, title = 'Quick Lesson', scaffolding = 'standard', standards = null) {
   return handleResponse(await fetch(`${BASE_URL}/quick-lesson`, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ session_id: sessionId, start_page: startPage, end_page: endPage, title }),
+    body: JSON.stringify({ session_id: sessionId, start_page: startPage, end_page: endPage, title, scaffolding, standards }),
+  }))
+}
+
+export async function flagLesson(sessionId, sessionNumber, reason) {
+  return handleResponse(await fetch(`${BASE_URL}/flag-lesson`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ session_id: sessionId, session_number: sessionNumber, reason }),
+  }))
+}
+
+export async function regenerateSection(sessionId, sessionNumber, section, scaffolding = 'standard', standards = null) {
+  return handleResponse(await fetch(`${BASE_URL}/regenerate-section`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ session_id: sessionId, session_number: sessionNumber, section, scaffolding, standards }),
+  }))
+}
+
+export async function getCostEstimate(sessionId, totalSessions) {
+  return handleResponse(await fetch(`${BASE_URL}/cost-estimate`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ session_id: sessionId, total_sessions: totalSessions }),
+  }))
+}
+
+export async function updateStructure(sessionId, chapters) {
+  return handleResponse(await fetch(`${BASE_URL}/structure`, {
+    method: 'PATCH',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ session_id: sessionId, chapters }),
   }))
 }
