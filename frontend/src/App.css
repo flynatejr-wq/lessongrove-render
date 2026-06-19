@@ -1,35 +1,35 @@
 /* ═══════════════════════════════════════════════════════════════
-   LESSONGROVE — Terra token system
-   Terra · Ember · Earth · Fog · Bark · Rule
+   LESSONGROVE — Walnut + Gold token system
+   Gold · Ember · Earth · Fog · Bark · Rule
    Fonts: Fraunces (display) · DM Sans (body)
 ═══════════════════════════════════════════════════════════════ */
 
 :root {
-  --terra:      #b5562f;
-  --terra-dk:   #8f3e1c;
-  --terra-10:   rgba(181,86,47,0.10);
-  --terra-20:   rgba(181,86,47,0.20);
-  --terra-05:   rgba(181,86,47,0.05);
+  --terra:      #b8862a;
+  --terra-dk:   #8f6418;
+  --terra-10:   rgba(184,134,42,0.10);
+  --terra-20:   rgba(184,134,42,0.20);
+  --terra-05:   rgba(184,134,42,0.05);
 
-  --ember:      #e07a4d;
+  --ember:      #d4a030;
 
-  --earth:      #2d1a0e;
-  --fog:        #f5ece2;
-  --fog-dk:     #ede3d8;
-  --bark:       #7a6355;
-  --rule:       #ddd3c8;
-  --rule-md:    #c8bcae;
+  --earth:      #2a1808;
+  --fog:        #fdf6ec;
+  --fog-dk:     #f5e8d4;
+  --bark:       #8a7060;
+  --rule:       #e8d5b0;
+  --rule-md:    #d4b888;
 
   --card:       #ffffff;
-  --card-hover: #fffcf9;
+  --card-hover: #fffdf7;
 
   --tx-1:       var(--earth);
   --tx-2:       var(--bark);
-  --tx-3:       #a89585;
+  --tx-3:       #a89070;
 
-  --shadow-sm:  0 1px 3px rgba(45,26,14,0.08), 0 1px 2px rgba(45,26,14,0.04);
-  --shadow-md:  0 4px 14px rgba(45,26,14,0.10), 0 2px 4px rgba(45,26,14,0.06);
-  --shadow-lg:  0 8px 28px rgba(45,26,14,0.13), 0 4px 8px rgba(45,26,14,0.06);
+  --shadow-sm:  0 1px 3px rgba(42,24,8,0.08), 0 1px 2px rgba(42,24,8,0.04);
+  --shadow-md:  0 4px 14px rgba(42,24,8,0.10), 0 2px 4px rgba(42,24,8,0.06);
+  --shadow-lg:  0 8px 28px rgba(42,24,8,0.13), 0 4px 8px rgba(42,24,8,0.06);
 
   --radius:     10px;
   --radius-sm:  6px;
@@ -41,27 +41,27 @@
 
 /* ── Dark mode token overrides ───────────────────────────────── */
 [data-theme="dark"] {
-  --terra:      #e07a4d;
-  --terra-dk:   #c4622e;
-  --terra-10:   rgba(224,122,77,0.12);
-  --terra-20:   rgba(224,122,77,0.22);
-  --terra-05:   rgba(224,122,77,0.06);
+  --terra:      #d4a030;
+  --terra-dk:   #b8862a;
+  --terra-10:   rgba(212,160,48,0.12);
+  --terra-20:   rgba(212,160,48,0.22);
+  --terra-05:   rgba(212,160,48,0.06);
 
-  --ember:      #f0a070;
+  --ember:      #e8b840;
 
-  --earth:      #f4ede6;
-  --fog:        #1c1714;
-  --fog-dk:     #221b17;
-  --bark:       #a89a92;
-  --rule:       #332821;
-  --rule-md:    #4a3828;
+  --earth:      #f2e8d4;
+  --fog:        #140f08;
+  --fog-dk:     #1c1408;
+  --bark:       #8a7660;
+  --rule:       #2a1e10;
+  --rule-md:    #3a2a16;
 
-  --card:       #262019;
-  --card-hover: #2e2820;
+  --card:       #1c1408;
+  --card-hover: #221a0c;
 
-  --tx-1:       #f4ede6;
-  --tx-2:       #c4b9b0;
-  --tx-3:       #a89a92;
+  --tx-1:       #f2e8d4;
+  --tx-2:       #c4aa80;
+  --tx-3:       #8a7660;
 
   --shadow-sm:  0 1px 3px rgba(0,0,0,0.25), 0 1px 2px rgba(0,0,0,0.18);
   --shadow-md:  0 4px 14px rgba(0,0,0,0.35), 0 2px 4px rgba(0,0,0,0.22);
@@ -74,7 +74,7 @@ html { font-family: var(--font-body); -webkit-font-smoothing: antialiased; }
 
 body {
   background: var(--fog);
-  background-image: radial-gradient(circle, rgba(181,86,47,0.07) 1px, transparent 1px);
+  background-image: radial-gradient(circle, rgba(184,134,42,0.07) 1px, transparent 1px);
   background-size: 22px 22px;
   color: var(--tx-1);
   line-height: 1.6;
@@ -84,7 +84,7 @@ body {
 }
 
 [data-theme="dark"] body {
-  background-image: radial-gradient(circle, rgba(224,122,77,0.04) 1px, transparent 1px);
+  background-image: radial-gradient(circle, rgba(212,160,48,0.04) 1px, transparent 1px);
 }
 
 /* Warm radial washes */
@@ -92,8 +92,8 @@ body {
   content: '';
   position: fixed; inset: 0;
   background:
-    radial-gradient(ellipse 65% 55% at 15% 8%, rgba(181,86,47,0.07) 0%, transparent 65%),
-    radial-gradient(ellipse 55% 65% at 88% 92%, rgba(224,122,77,0.05) 0%, transparent 65%);
+    radial-gradient(ellipse 65% 55% at 15% 8%, rgba(184,134,42,0.07) 0%, transparent 65%),
+    radial-gradient(ellipse 55% 65% at 88% 92%, rgba(212,160,48,0.05) 0%, transparent 65%);
   pointer-events: none; z-index: 0;
 }
 
@@ -1415,7 +1415,7 @@ body {
   .lesson-section { page-break-inside: avoid; }
   .lesson-section-hdr { margin-bottom: 5pt !important; }
   .lesson-section-heading {
-    font-size: 7pt !important; color: #b5562f !important;
+    font-size: 7pt !important; color: #b8862a !important;
     letter-spacing: 0.1em !important;
     border-bottom: 0.5pt solid #e0c8be !important;
     padding-bottom: 3pt !important;

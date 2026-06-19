@@ -31,9 +31,9 @@ export default function Home({ onQuick, onFull, onHistory }) {
         <button className="mode-card mode-card--full" onClick={onFull} aria-label="Full curriculum — build a complete term plan">
           <div className="mode-icon" aria-hidden="true">
             <svg width="22" height="22" viewBox="0 0 22 22" fill="none">
-              <rect x="2" y="14" width="4" height="6" rx="1" fill="#b5562f" opacity="0.7"/>
-              <rect x="9" y="9" width="4" height="11" rx="1" fill="#b5562f" opacity="0.85"/>
-              <rect x="16" y="4" width="4" height="16" rx="1" fill="#b5562f"/>
+              <rect x="2" y="14" width="4" height="6" rx="1" fill="#b8862a" opacity="0.7"/>
+              <rect x="9" y="9" width="4" height="11" rx="1" fill="#b8862a" opacity="0.85"/>
+              <rect x="16" y="4" width="4" height="16" rx="1" fill="#b8862a"/>
             </svg>
           </div>
           <span className="mode-kicker">Full curriculum</span>

@@ -33,7 +33,7 @@ function getInitialTheme() {
 function LogoMark() {
   return (
     <svg className="logo-mark" viewBox="0 0 32 32" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
-      <rect width="32" height="32" rx="6" fill="#b5562f"/>
+      <rect width="32" height="32" rx="6" fill="#b8862a"/>
       <rect x="4"    y="20" width="7" height="8"  fill="white"/>
       <rect x="12.5" y="12" width="7" height="16" fill="white"/>
       <rect x="21"   y="4"  width="7" height="24" fill="white"/>
