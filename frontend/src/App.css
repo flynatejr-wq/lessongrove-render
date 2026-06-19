@@ -1435,3 +1435,156 @@ body {
   .question-type { border: 0.5pt solid #ccc !important; background: none !important; color: #666 !important; }
   .activity-duration { background: none !important; border: 0.5pt solid #ccc !important; }
 }
+
+/* ══════════════════════════════════════════════════════════════
+   SOURCE PICKER
+══════════════════════════════════════════════════════════════ */
+
+.source-picker { max-width: 640px; }
+
+.source-tabs {
+  display: flex; flex-wrap: wrap; gap: 6px; margin-bottom: 16px;
+}
+
+.source-tab {
+  display: flex; align-items: center; gap: 6px;
+  padding: 7px 14px; border-radius: var(--radius-sm);
+  border: 1px solid var(--rule); background: var(--card);
+  color: var(--tx-2); font-size: 13px; font-family: var(--font-body);
+  cursor: pointer; transition: all 0.15s;
+}
+.source-tab:hover { border-color: var(--terra); color: var(--tx-1); }
+.source-tab--active {
+  background: var(--terra); border-color: var(--terra);
+  color: #fff; font-weight: 600;
+}
+.source-tab-icon { font-size: 14px; line-height: 1; }
+.source-tab-label { line-height: 1; }
+
+.source-hint {
+  font-size: 13px; color: var(--tx-2); margin-bottom: 16px; min-height: 18px;
+}
+
+.source-form { display: flex; flex-direction: column; gap: 12px; }
+
+.source-url-input {
+  width: 100%; padding: 10px 12px;
+  border: 1px solid var(--rule); border-radius: var(--radius-sm);
+  background: var(--card); color: var(--tx-1);
+  font-size: 14px; font-family: var(--font-body);
+  transition: border-color 0.15s;
+}
+.source-url-input:focus { outline: none; border-color: var(--terra); }
+
+.source-text-wrap { display: flex; flex-direction: column; gap: 8px; }
+
+.source-text-title {
+  width: 100%; padding: 8px 12px;
+  border: 1px solid var(--rule); border-radius: var(--radius-sm);
+  background: var(--card); color: var(--tx-1);
+  font-size: 14px; font-family: var(--font-body);
+}
+.source-text-title:focus { outline: none; border-color: var(--terra); }
+
+.source-textarea {
+  width: 100%; padding: 10px 12px; resize: vertical;
+  border: 1px solid var(--rule); border-radius: var(--radius-sm);
+  background: var(--card); color: var(--tx-1);
+  font-size: 13px; line-height: 1.6; font-family: var(--font-body);
+  min-height: 200px;
+}
+.source-textarea:focus { outline: none; border-color: var(--terra); }
+
+.source-char-count { font-size: 11px; color: var(--tx-3); text-align: right; }
+
+.source-actions { display: flex; gap: 10px; align-items: center; margin-top: 4px; }
+
+/* Source summary card (non-PDF after ingest) */
+.source-summary-card {
+  display: flex; align-items: center; gap: 12px;
+  padding: 12px 16px; border-radius: var(--radius);
+  border: 1px solid var(--rule); background: var(--card);
+  margin-bottom: 4px;
+}
+.source-summary-icon { font-size: 22px; flex-shrink: 0; }
+.source-summary-info { flex: 1; display: flex; flex-direction: column; gap: 2px; }
+.source-summary-name { font-size: 14px; font-weight: 600; color: var(--tx-1); }
+.source-summary-meta { font-size: 12px; color: var(--tx-2); }
+
+/* ══════════════════════════════════════════════════════════════
+   OUTPUT TYPE TOGGLE
+══════════════════════════════════════════════════════════════ */
+
+.output-type-toggle {
+  display: flex; gap: 0; border-radius: var(--radius-sm);
+  border: 1px solid var(--rule); overflow: hidden;
+  width: fit-content;
+}
+.output-type-btn {
+  padding: 8px 20px; font-size: 13px; font-weight: 500;
+  font-family: var(--font-body); background: var(--card);
+  color: var(--tx-2); border: none; cursor: pointer;
+  transition: all 0.15s;
+}
+.output-type-btn + .output-type-btn { border-left: 1px solid var(--rule); }
+.output-type-btn--active {
+  background: var(--terra); color: #fff; font-weight: 600;
+}
+.output-type-btn:hover:not(.output-type-btn--active) { color: var(--tx-1); }
+
+/* Assignment type grid */
+.assignment-type-grid {
+  display: grid; grid-template-columns: 1fr 1fr; gap: 8px; max-width: 520px;
+}
+.assignment-type-card {
+  display: flex; flex-direction: column; gap: 3px;
+  padding: 12px 14px; border-radius: var(--radius-sm);
+  border: 1px solid var(--rule); background: var(--card);
+  text-align: left; cursor: pointer; transition: all 0.15s;
+}
+.assignment-type-card:hover { border-color: var(--terra); }
+.assignment-type-card--active {
+  border-color: var(--terra); background: var(--terra-05);
+}
+.assignment-type-label {
+  font-size: 13px; font-weight: 600; color: var(--tx-1);
+}
+.assignment-type-desc { font-size: 11.5px; color: var(--tx-2); line-height: 1.4; }
+
+/* ══════════════════════════════════════════════════════════════
+   ASSIGNMENT VIEW
+══════════════════════════════════════════════════════════════ */
+
+.assignment-overview {
+  font-size: 14px; line-height: 1.7; color: var(--tx-2);
+  padding: 12px 16px; border-left: 3px solid var(--terra);
+  background: var(--terra-05); border-radius: 0 var(--radius-sm) var(--radius-sm) 0;
+}
+
+.assignment-task-list {
+  display: flex; flex-direction: column; gap: 16px;
+  list-style: none; counter-reset: task-counter;
+}
+
+.assignment-task-item {
+  display: flex; flex-direction: column; gap: 6px;
+  padding: 16px; border-radius: var(--radius);
+  background: var(--card); border: 0.5px solid var(--rule);
+  counter-increment: task-counter;
+  position: relative;
+}
+.assignment-task-item::before {
+  content: counter(task-counter);
+  position: absolute; top: 14px; left: -36px;
+  width: 24px; height: 24px; border-radius: 50%;
+  background: var(--terra); color: #fff;
+  font-size: 11px; font-weight: 700;
+  display: flex; align-items: center; justify-content: center;
+}
+@media (max-width: 700px) {
+  .assignment-task-item::before { position: static; margin-bottom: 6px; }
+}
+
+.assignment-task-prompt {
+  font-size: 14px; line-height: 1.65; color: var(--tx-1);
+}

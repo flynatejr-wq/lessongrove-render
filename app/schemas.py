@@ -40,6 +40,7 @@ class SessionData(BaseModel):
     session_id: str
     filename: str
     pages: list[PageContent]
+    content_type: str = "pdf"   # "pdf" | "text" | "youtube" | "url" | "docx" | "image"
     structure: StructureMap | None = None
     schedule: "Schedule | None" = None
     completed_lessons: dict[int, "LessonPlan"] = {}  # session_number -> lesson
@@ -203,6 +204,49 @@ class FlagLessonResponse(BaseModel):
     status: str
     session_number: int
     flags: list[LessonFlag]
+
+
+# ── Assignment ───────────────────────────────────────────────────────────────
+
+class AssignmentTask(BaseModel):
+    number: int
+    prompt: str
+    page_ref: int | None = None
+
+
+class Assignment(BaseModel):
+    schema_version: str = "1.2"
+    session_number: int = 1
+    week_number: int = 1
+    day_number: int = 1
+    title: str
+    assignment_type: str   # "worksheet" | "problem_set" | "discussion_prompt" | "project_brief"
+    source_ref: str        # page range, timestamp range, or "Full document"
+    source_sections: list[str]
+    scaffolding_level: str
+    standards_framework: str | None = None
+    overview: str
+    tasks: list[AssignmentTask]
+    flags: list[LessonFlag] = []
+
+
+# ── Ingest (non-PDF sources) ──────────────────────────────────────────────────
+
+class IngestTextRequest(BaseModel):
+    text: str
+    title: str = "Pasted text"
+
+
+class IngestUrlRequest(BaseModel):
+    url: str
+
+
+class IngestResponse(BaseModel):
+    session_id: str
+    filename: str
+    total_pages: int       # chunk count for non-PDF
+    content_type: str
+    message: str
 
 
 # ── Cost estimation ───────────────────────────────────────────────────────────

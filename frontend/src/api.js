@@ -60,12 +60,50 @@ export async function generateLessons(sessionId, onProgress, scaffolding = 'stan
   }
 }
 
-export async function quickLesson(sessionId, startPage, endPage, title = 'Quick Lesson', scaffolding = 'standard', standards = null) {
+export async function quickLesson(sessionId, startPage, endPage, title = 'Quick Lesson', scaffolding = 'standard', standards = null, outputType = 'lesson', assignmentType = 'worksheet') {
   return handleResponse(await fetch(`${BASE_URL}/quick-lesson`, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ session_id: sessionId, start_page: startPage, end_page: endPage, title, scaffolding, standards }),
+    body: JSON.stringify({ session_id: sessionId, start_page: startPage, end_page: endPage, title, scaffolding, standards, output_type: outputType, assignment_type: assignmentType }),
   }))
+}
+
+// ── Non-PDF ingestion ────────────────────────────────────────────────────────
+
+export async function ingestText(text, title = 'Pasted text') {
+  return handleResponse(await fetch(`${BASE_URL}/ingest/text`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ text, title }),
+  }))
+}
+
+export async function ingestYoutube(url) {
+  return handleResponse(await fetch(`${BASE_URL}/ingest/youtube`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ url }),
+  }))
+}
+
+export async function ingestUrl(url) {
+  return handleResponse(await fetch(`${BASE_URL}/ingest/url`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ url }),
+  }))
+}
+
+export async function ingestDocx(file) {
+  const form = new FormData()
+  form.append('file', file)
+  return handleResponse(await fetch(`${BASE_URL}/ingest/docx`, { method: 'POST', body: form }))
+}
+
+export async function ingestImage(file) {
+  const form = new FormData()
+  form.append('file', file)
+  return handleResponse(await fetch(`${BASE_URL}/ingest/image`, { method: 'POST', body: form }))
 }
 
 export async function flagLesson(sessionId, sessionNumber, reason) {

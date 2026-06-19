@@ -1,7 +1,7 @@
 from contextlib import asynccontextmanager
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
-from app.routers import upload, structure, pace, generate, quick, flag, regenerate, cost, structure_edit
+from app.routers import upload, structure, pace, generate, quick, flag, regenerate, cost, structure_edit, ingest
 
 
 @asynccontextmanager
@@ -28,6 +28,7 @@ app.include_router(flag.router)
 app.include_router(regenerate.router)
 app.include_router(cost.router)
 app.include_router(structure_edit.router)
+app.include_router(ingest.router)
 
 
 @app.get("/health")

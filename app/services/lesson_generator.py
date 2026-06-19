@@ -1,7 +1,7 @@
 import json
 import anthropic
 from app.config import settings
-from app.schemas import LessonPlan, LearningObjective, KeyConcept, Activity, AssessmentQuestion, SessionSlot, PageContent
+from app.schemas import LessonPlan, LearningObjective, KeyConcept, Activity, AssessmentQuestion, SessionSlot, PageContent, Assignment, AssignmentTask
 
 _MAX_TEXT_CHARS = 60_000  # ~15k tokens — fits comfortably in claude-sonnet-4-6 context
 
@@ -10,6 +10,15 @@ INPUT_PRICE_PER_M  = 3.00
 OUTPUT_PRICE_PER_M = 15.00
 AVG_INPUT_TOKENS   = 15_000   # prompt + textbook excerpt
 AVG_OUTPUT_TOKENS  = 2_000    # structured JSON lesson plan
+
+
+def _extract_all_text(pages: list[PageContent]) -> str:
+    """Extract all text from a session (for non-PDF sources)."""
+    chunks = [p.text for p in pages if p.text.strip()]
+    text = "\n\n".join(chunks)
+    if len(text) > _MAX_TEXT_CHARS:
+        text = text[:_MAX_TEXT_CHARS] + "\n\n[... text truncated for length ...]"
+    return text
 
 
 def _extract_text(pages: list[PageContent], start_page: int, end_page: int) -> str:
@@ -214,6 +223,121 @@ def generate_lesson(
         activities=[Activity(**a) for a in data.get("activities", [])],
         assessment_questions=[AssessmentQuestion(**q) for q in data.get("assessment_questions", [])],
         homework=data.get("homework"),
+    )
+
+
+_ASSIGNMENT_SCHEMA = """
+{
+  "title": "string — concise assignment title",
+  "overview": "string — 2-3 sentence teacher-facing description of what students will do and why",
+  "tasks": [
+    {"number": 1, "prompt": "string — the actual student-facing task or question", "page_ref": integer_or_null},
+    ...
+  ]
+}
+"""
+
+_ASSIGNMENT_TYPE_INSTRUCTIONS = {
+    "worksheet": "Create a worksheet with 6–10 questions or structured tasks that guide students through the content step by step. Mix recall, comprehension, and application questions.",
+    "problem_set": "Create a problem set with 5–8 practice problems or exercises derived directly from the source content. Each problem should require students to apply a concept from the material.",
+    "discussion_prompt": "Create 3–5 rich discussion prompts that require students to engage critically with the source content. Each prompt should be open-ended and invite multiple perspectives.",
+    "project_brief": "Create a project brief with a compelling central challenge rooted in the source content. Include a clear deliverable, 4–6 specific tasks or milestones, and success criteria.",
+}
+
+_ASSIGNMENT_PROMPT = """\
+You are an expert educator creating a student-facing assignment for a teacher.
+
+SOURCE CONTENT
+{source_description}
+
+SCAFFOLDING & STANDARDS
+{scaffolding_instruction}
+{standards_instruction}
+
+SOURCE EXCERPT
+{text}
+
+---
+
+INSTRUCTIONS
+1. Create a {assignment_type_label} strictly grounded in the source excerpt above.
+2. Do NOT introduce any facts, examples, or content not present in the excerpt.
+3. {type_instruction}
+4. For each task, set page_ref to the page/chunk number in the excerpt where that content appears (or null if it spans multiple sections).
+5. Apply the scaffolding level consistently — adjust difficulty, complexity, and support offered accordingly.
+6. The assignment must be entirely student-facing (not a lesson plan).
+
+Return ONLY valid JSON matching this schema — no markdown fences, no extra text:
+{schema}
+"""
+
+_ASSIGNMENT_TYPE_LABELS = {
+    "worksheet": "worksheet",
+    "problem_set": "problem set",
+    "discussion_prompt": "set of discussion prompts",
+    "project_brief": "project brief",
+}
+
+
+def generate_assignment(
+    slot: SessionSlot,
+    pages: list[PageContent],
+    scaffolding_level: str = "standard",
+    standards_framework: str | None = None,
+    assignment_type: str = "worksheet",
+    content_type: str = "pdf",
+) -> Assignment:
+    if content_type == "pdf":
+        text = _extract_text(pages, slot.start_page, slot.end_page)
+        source_ref = f"pp. {slot.start_page}–{slot.end_page}"
+        source_description = f"Textbook pages {slot.start_page}–{slot.end_page}"
+    else:
+        text = _extract_all_text(pages)
+        source_ref = "Full document"
+        source_description = f"Source material ({content_type})"
+
+    sections = ", ".join(u.title for u in slot.units) or "Full document"
+    scaffolding_instruction = _SCAFFOLDING_INSTRUCTIONS.get(scaffolding_level, _SCAFFOLDING_INSTRUCTIONS["standard"])
+    standards_instruction = _STANDARDS_INSTRUCTIONS.get(standards_framework, "") if standards_framework else ""
+    type_instruction = _ASSIGNMENT_TYPE_INSTRUCTIONS.get(assignment_type, _ASSIGNMENT_TYPE_INSTRUCTIONS["worksheet"])
+    type_label = _ASSIGNMENT_TYPE_LABELS.get(assignment_type, assignment_type.replace("_", " "))
+
+    prompt = _ASSIGNMENT_PROMPT.format(
+        source_description=source_description,
+        scaffolding_instruction=scaffolding_instruction,
+        standards_instruction=standards_instruction,
+        text=text if text.strip() else "(No extractable text.)",
+        assignment_type_label=type_label,
+        type_instruction=type_instruction,
+        schema=_ASSIGNMENT_SCHEMA,
+    )
+
+    client = anthropic.Anthropic(api_key=settings.anthropic_api_key)
+    message = client.messages.create(
+        model="claude-sonnet-4-6",
+        max_tokens=3000,
+        messages=[{"role": "user", "content": prompt}],
+    )
+
+    raw = message.content[0].text.strip()
+    if raw.startswith("```"):
+        raw = raw.split("\n", 1)[1].rsplit("```", 1)[0].strip()
+
+    data = json.loads(raw)
+
+    return Assignment(
+        schema_version="1.2",
+        session_number=slot.session_number,
+        week_number=slot.week_number,
+        day_number=slot.day_number,
+        title=data.get("title", sections),
+        assignment_type=assignment_type,
+        source_ref=source_ref,
+        source_sections=[u.title for u in slot.units],
+        scaffolding_level=scaffolding_level,
+        standards_framework=standards_framework,
+        overview=data.get("overview", ""),
+        tasks=[AssignmentTask(**t) for t in data.get("tasks", [])],
     )
 
 
