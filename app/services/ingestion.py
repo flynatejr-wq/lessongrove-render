@@ -51,16 +51,24 @@ def ingest_docx(file_bytes: bytes) -> list[PageContent]:
 
 
 def ingest_youtube(url: str) -> list[PageContent]:
-    from youtube_transcript_api import YouTubeTranscriptApi, TranscriptsDisabled, NoTranscriptFound
+    # youtube-transcript-api 1.x: entries are objects with .text/.start/.duration
+    # Fall back to dict-key access for older installs
+    from youtube_transcript_api import YouTubeTranscriptApi
 
     video_id = _extract_youtube_id(url)
     if not video_id:
         raise ValueError(f"Could not extract a YouTube video ID from: {url}")
 
     try:
-        entries = YouTubeTranscriptApi.get_transcript(video_id)
-    except (TranscriptsDisabled, NoTranscriptFound) as e:
+        raw = YouTubeTranscriptApi.get_transcript(video_id)
+    except Exception as e:
         raise ValueError(f"No transcript available for this video: {e}")
+
+    def _get(entry, key: str):
+        try:
+            return getattr(entry, key)
+        except AttributeError:
+            return entry[key]
 
     # Group entries into ~2-minute chunks
     chunks: list[PageContent] = []
@@ -73,15 +81,17 @@ def ingest_youtube(url: str) -> list[PageContent]:
         h, m = divmod(m, 60)
         return f"{h}:{m:02d}:{sec:02d}" if h else f"{m}:{sec:02d}"
 
-    for entry in entries:
-        if entry["start"] - chunk_start >= chunk_duration and chunk_lines:
+    for entry in raw:
+        start = _get(entry, "start")
+        text  = _get(entry, "text")
+        if start - chunk_start >= chunk_duration and chunk_lines:
             chunks.append(PageContent(
                 page_num=len(chunks) + 1,
-                text=f"[{_fmt_time(chunk_start)}–{_fmt_time(entry['start'])}]\n" + " ".join(chunk_lines),
+                text=f"[{_fmt_time(chunk_start)}–{_fmt_time(start)}]\n" + " ".join(chunk_lines),
             ))
             chunk_lines = []
-            chunk_start = entry["start"]
-        chunk_lines.append(entry["text"])
+            chunk_start = start
+        chunk_lines.append(text)
 
     if chunk_lines:
         chunks.append(PageContent(
