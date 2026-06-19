@@ -31,6 +31,10 @@ app.include_router(structure_edit.router)
 app.include_router(ingest.router)
 
 
+@app.get("/")
+async def root():
+    return {"service": "LessonGrove API", "status": "ok", "docs": "/docs"}
+
 @app.get("/health")
 async def health():
     return {"status": "ok"}
