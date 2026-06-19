@@ -1,27 +1,33 @@
 import { useState, useEffect } from 'react'
 import Home from './components/Home.jsx'
+import Onboarding from './components/Onboarding.jsx'
 import QuickFlow from './components/QuickFlow.jsx'
 import UploadForm from './components/UploadForm.jsx'
 import StructureView from './components/StructureView.jsx'
 import CourseForm from './components/CourseForm.jsx'
 import ScheduleGrid from './components/ScheduleGrid.jsx'
 import LessonView from './components/LessonView.jsx'
-import History from './components/History.jsx'
+import MyLessons from './components/MyLessons.jsx'
+import Settings from './components/Settings.jsx'
 import { paceCurriculum, generateLessons, updateStructure, getCostEstimate } from './api.js'
-import { saveTermToHistory } from './history.js'
+import { saveTermToHistory, getAllHistory, deleteFromHistory } from './history.js'
 
 const SETTINGS_KEY = 'lessongrove_settings'
 const THEME_KEY = 'lessongrove_theme'
+const PROFILE_KEY = 'lessongrove_profile'
 
 function loadSettings() {
-  try { return JSON.parse(localStorage.getItem(SETTINGS_KEY)) || {} }
-  catch { return {} }
+  try { return JSON.parse(localStorage.getItem(SETTINGS_KEY)) || {} } catch { return {} }
 }
-
 function saveSettings(s) {
   try { localStorage.setItem(SETTINGS_KEY, JSON.stringify(s)) } catch {}
 }
-
+function loadProfile() {
+  try { return JSON.parse(localStorage.getItem(PROFILE_KEY)) } catch { return null }
+}
+function saveProfile(p) {
+  try { localStorage.setItem(PROFILE_KEY, JSON.stringify(p)) } catch {}
+}
 function getInitialTheme() {
   try {
     const stored = localStorage.getItem(THEME_KEY)
@@ -41,31 +47,22 @@ function LogoMark() {
   )
 }
 
-function ThemeToggle({ theme, onToggle }) {
-  return (
-    <button
-      className="theme-toggle"
-      onClick={onToggle}
-      aria-label={theme === 'dark' ? 'Switch to light mode' : 'Switch to dark mode'}
-      title={theme === 'dark' ? 'Light mode' : 'Dark mode'}
-    >
-      {theme === 'dark' ? (
-        <svg width="16" height="16" viewBox="0 0 16 16" fill="none" aria-hidden="true">
-          <circle cx="8" cy="8" r="3.5" stroke="currentColor" strokeWidth="1.5"/>
-          <path d="M8 1v1.5M8 13.5V15M1 8h1.5M13.5 8H15M3.05 3.05l1.06 1.06M11.89 11.89l1.06 1.06M11.89 4.11l1.06-1.06M3.05 12.95l1.06-1.06" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round"/>
-        </svg>
-      ) : (
-        <svg width="16" height="16" viewBox="0 0 16 16" fill="none" aria-hidden="true">
-          <path d="M13.5 9.5A5.5 5.5 0 016.5 2.5a5.5 5.5 0 107 7z" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
-        </svg>
-      )}
-    </button>
-  )
+// Pages / modes
+const PAGES = {
+  HOME: 'home',
+  QUICK: 'quick',
+  CURRICULUM: 'curriculum',
+  MY_LESSONS: 'my_lessons',
+  SETTINGS: 'settings',
 }
 
 export default function App() {
   const [theme, setTheme] = useState(getInitialTheme)
-  const [mode, setMode] = useState(null)
+  const [profile, setProfile] = useState(loadProfile)
+  const [page, setPage] = useState(PAGES.HOME)
+  const [menuOpen, setMenuOpen] = useState(false)
+
+  // Full curriculum state
   const [fullStep, setFullStep] = useState('upload')
   const [uploadData, setUploadData] = useState(null)
   const [scheduleData, setScheduleData] = useState(null)
@@ -89,18 +86,44 @@ export default function App() {
     saveSettings({ scaffolding })
   }, [scaffolding])
 
-  function toggleTheme() {
-    setTheme(t => t === 'dark' ? 'light' : 'dark')
+  function toggleTheme() { setTheme(t => t === 'dark' ? 'light' : 'dark') }
+
+  function handleOnboardingComplete(data) {
+    const p = { ...data, scaffolding: 'standard' }
+    saveProfile(p)
+    setProfile(p)
+    setScaffolding(p.scaffolding)
   }
 
-  function reset() {
-    setMode(null); setFullStep('upload')
-    setUploadData(null); setScheduleData(null)
-    setLessons({}); setIsGenerating(false)
-    setGenProgress(null); setActiveLesson(null)
-    setError(null); setCostEstimate(null)
+  function handleSaveSettings(data) {
+    const p = { ...profile, ...data }
+    saveProfile(p)
+    setProfile(p)
+    if (data.scaffolding) setScaffolding(data.scaffolding)
   }
 
+  function handleClearHistory() {
+    const all = getAllHistory()
+    all.forEach(t => deleteFromHistory(t.id))
+    try { localStorage.removeItem('lessongrove_history') } catch {}
+  }
+
+  function navigate(p) {
+    setPage(p)
+    setMenuOpen(false)
+    if (p !== PAGES.CURRICULUM) {
+      setFullStep('upload'); setUploadData(null); setScheduleData(null)
+      setLessons({}); setActiveLesson(null); setError(null); setCostEstimate(null)
+    }
+  }
+
+  function resetCurriculum() {
+    setFullStep('upload'); setUploadData(null); setScheduleData(null)
+    setLessons({}); setIsGenerating(false); setGenProgress(null)
+    setActiveLesson(null); setError(null); setCostEstimate(null)
+  }
+
+  // Full curriculum handlers
   function handleUploadResult(result) {
     if (result.status === 'uploading') { setFullStep('uploading'); setError(null) }
     else if (result.status === 'done') { setUploadData(result.data); setFullStep('structure') }
@@ -114,9 +137,7 @@ export default function App() {
       setUploadData(prev => ({ ...prev, structure: { ...prev.structure, chapters } }))
     } catch (err) {
       setError(`Couldn't save structure: ${err.message}`)
-    } finally {
-      setStructureSaving(false)
-    }
+    } finally { setStructureSaving(false) }
   }
 
   async function handlePace(weeks, sessionsPerWeek, newScaffolding, _standards, termStart, holidays) {
@@ -130,9 +151,7 @@ export default function App() {
         setCostEstimate(est)
       } catch {}
       setFullStep('schedule')
-    } catch (err) {
-      setError(err.message); setFullStep('structure')
-    }
+    } catch (err) { setError(err.message); setFullStep('structure') }
   }
 
   async function handleGenerateLessons() {
@@ -160,75 +179,95 @@ export default function App() {
             sseErrors.push(event.error)
           }
         },
-        scaffolding,
-        null,
-        hasExisting,
+        scaffolding, null, hasExisting,
       )
-    } catch (err) {
-      setError(err.message)
-    } finally {
+    } catch (err) { setError(err.message) }
+    finally {
       setIsGenerating(false); setGenProgress(null)
       if (sseErrors.length > 0) {
-        const msg = sseErrors.length === 1
+        setError(sseErrors.length === 1
           ? `Lesson generation failed: ${sseErrors[0]}`
-          : `${sseErrors.length} lessons failed. First error: ${sseErrors[0]}`
-        setError(msg)
+          : `${sseErrors.length} lessons failed. First error: ${sseErrors[0]}`)
       }
-      // Auto-save to history when at least one lesson was generated
       const allLessons = { ...lessons, ...newLessons }
       if (Object.keys(allLessons).length > 0 && scheduleData) {
         saveTermToHistory({
-          id: uploadData.session_id,
-          filename: uploadData.filename,
-          savedAt: new Date().toISOString(),
-          weeks: scheduleData.schedule.total_weeks,
+          id: uploadData.session_id, filename: uploadData.filename,
+          savedAt: new Date().toISOString(), weeks: scheduleData.schedule.total_weeks,
           sessionsPerWeek: scheduleData.schedule.sessions_per_week,
-          scaffolding,
-          schedule: scheduleData.schedule,
-          lessons: allLessons,
+          scaffolding, schedule: scheduleData.schedule, lessons: allLessons,
         })
       }
     }
   }
 
-  function handleViewLesson(lesson) {
-    setActiveLesson(lesson); setFullStep('lesson')
-  }
-
-  function handleBackToSchedule() {
-    setActiveLesson(null); setFullStep('schedule')
-  }
-
+  function handleViewLesson(lesson) { setActiveLesson(lesson); setFullStep('lesson') }
+  function handleBackToSchedule() { setActiveLesson(null); setFullStep('schedule') }
   function handleLessonUpdate(updatedLesson) {
     setLessons(prev => ({ ...prev, [updatedLesson.session_number]: updatedLesson }))
     setActiveLesson(updatedLesson)
   }
-
   function handleRestoreTerm(term) {
-    // Restore a term from history into the schedule view
     setUploadData({ session_id: term.id, filename: term.filename, structure: term.schedule })
     setScheduleData({ filename: term.filename, schedule: term.schedule })
     setLessons(term.lessons || {})
     setScaffolding(term.scaffolding || 'standard')
-    setMode('full')
+    setPage(PAGES.CURRICULUM)
     setFullStep('schedule')
   }
 
+  // Breadcrumbs for curriculum flow
   const crumbs = [
-    { key: 'structure', label: 'Structure', active: ['structure', 'pacing', 'schedule', 'lesson'].includes(fullStep) },
-    { key: 'schedule',  label: 'Schedule',  active: ['schedule', 'lesson'].includes(fullStep) },
-    { key: 'lessons',   label: 'Lessons',   active: fullStep === 'lesson' },
+    { key: 'structure', label: '1. Structure', active: ['structure','pacing','schedule','lesson'].includes(fullStep) },
+    { key: 'schedule',  label: '2. Schedule',  active: ['schedule','lesson'].includes(fullStep) },
+    { key: 'lessons',   label: '3. Lessons',   active: fullStep === 'lesson' },
   ]
-  const showBreadcrumb = mode === 'full' && fullStep !== 'upload' && fullStep !== 'uploading'
+  const showBreadcrumb = page === PAGES.CURRICULUM && !['upload','uploading'].includes(fullStep)
+
+  // Show onboarding for first-time users
+  if (!profile) {
+    return (
+      <div className="app" data-theme={theme}>
+        <header className="header">
+          <div className="header-inner">
+            <span className="logo"><LogoMark /><span className="logo-text">LessonGrove</span></span>
+            <button className="theme-toggle" onClick={toggleTheme} aria-label="Toggle theme">
+              {theme === 'dark' ? '☀' : '☾'}
+            </button>
+          </div>
+        </header>
+        <main className="main"><Onboarding onComplete={handleOnboardingComplete} /></main>
+      </div>
+    )
+  }
+
+  const navLinks = [
+    { id: PAGES.QUICK,      label: 'Quick Lesson' },
+    { id: PAGES.CURRICULUM, label: 'My Curriculum' },
+    { id: PAGES.MY_LESSONS, label: 'My Lessons' },
+    { id: PAGES.SETTINGS,   label: 'Settings' },
+  ]
 
   return (
     <div className="app">
       <header className="header">
         <div className="header-inner">
-          <a className="logo" href="/" onClick={e => { e.preventDefault(); reset() }} aria-label="LessonGrove home">
+          <a className="logo" href="/" onClick={e => { e.preventDefault(); navigate(PAGES.HOME) }} aria-label="LessonGrove home">
             <LogoMark />
             <span className="logo-text">LessonGrove</span>
           </a>
+
+          <nav className="main-nav" aria-label="Main navigation">
+            {navLinks.map(l => (
+              <button
+                key={l.id}
+                className={`nav-link${page === l.id ? ' nav-link--active' : ''}`}
+                onClick={() => navigate(l.id)}
+              >
+                {l.label}
+              </button>
+            ))}
+          </nav>
 
           {showBreadcrumb && (
             <nav className="breadcrumb" aria-label="Progress">
@@ -241,49 +280,100 @@ export default function App() {
             </nav>
           )}
 
-          {mode !== null && !showBreadcrumb && (
-            <button className="header-home-btn" onClick={reset} aria-label="Back to home">
-              ← Home
+          <div className="header-right">
+            <button
+              className="btn-new"
+              onClick={() => navigate(PAGES.QUICK)}
+              aria-label="New quick lesson"
+            >
+              + New
             </button>
-          )}
-
-          <ThemeToggle theme={theme} onToggle={toggleTheme} />
+            <button
+              className="theme-toggle"
+              onClick={toggleTheme}
+              aria-label={theme === 'dark' ? 'Switch to light mode' : 'Switch to dark mode'}
+            >
+              {theme === 'dark' ? (
+                <svg width="16" height="16" viewBox="0 0 16 16" fill="none" aria-hidden="true">
+                  <circle cx="8" cy="8" r="3.5" stroke="currentColor" strokeWidth="1.5"/>
+                  <path d="M8 1v1.5M8 13.5V15M1 8h1.5M13.5 8H15M3.05 3.05l1.06 1.06M11.89 11.89l1.06 1.06M11.89 4.11l1.06-1.06M3.05 12.95l1.06-1.06" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round"/>
+                </svg>
+              ) : (
+                <svg width="16" height="16" viewBox="0 0 16 16" fill="none" aria-hidden="true">
+                  <path d="M13.5 9.5A5.5 5.5 0 016.5 2.5a5.5 5.5 0 107 7z" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
+                </svg>
+              )}
+            </button>
+            <button
+              className="hamburger"
+              onClick={() => setMenuOpen(o => !o)}
+              aria-label="Toggle menu"
+              aria-expanded={menuOpen}
+            >
+              <span/><span/><span/>
+            </button>
+          </div>
         </div>
+
+        {menuOpen && (
+          <nav className="mobile-menu" aria-label="Mobile navigation">
+            {navLinks.map(l => (
+              <button
+                key={l.id}
+                className={`mobile-nav-link${page === l.id ? ' mobile-nav-link--active' : ''}`}
+                onClick={() => navigate(l.id)}
+              >
+                {l.label}
+              </button>
+            ))}
+          </nav>
+        )}
       </header>
 
       <main className="main" id="main-content">
 
-        {mode === null && (
+        {page === PAGES.HOME && (
           <Home
-            onQuick={() => setMode('quick')}
-            onFull={() => setMode('full')}
-            onHistory={() => setMode('history')}
+            onQuick={() => navigate(PAGES.QUICK)}
+            onFull={() => navigate(PAGES.CURRICULUM)}
+            onHistory={() => navigate(PAGES.MY_LESSONS)}
           />
         )}
 
-        {mode === 'history' && (
-          <History onRestoreTerm={handleRestoreTerm} onBack={reset} />
+        {page === PAGES.QUICK && (
+          <QuickFlow onBack={() => navigate(PAGES.HOME)} defaultScaffolding={scaffolding} />
         )}
 
-        {mode === 'quick' && (
-          <QuickFlow onBack={reset} defaultScaffolding={scaffolding} />
+        {page === PAGES.MY_LESSONS && (
+          <MyLessons
+            onViewLesson={lesson => { setActiveLesson(lesson); setPage(PAGES.MY_LESSONS) }}
+            onBack={() => navigate(PAGES.HOME)}
+          />
         )}
 
-        {mode === 'full' && fullStep === 'upload' && (
+        {page === PAGES.SETTINGS && (
+          <Settings
+            profile={{ ...profile, scaffolding }}
+            theme={theme}
+            onSave={handleSaveSettings}
+            onThemeToggle={toggleTheme}
+            onClearHistory={handleClearHistory}
+          />
+        )}
+
+        {page === PAGES.CURRICULUM && fullStep === 'upload' && (
           <div className="upload-step">
             <div className="step-header">
               <p className="step-kicker">Step 1 of 3</p>
               <h1 className="step-title">Upload your textbook</h1>
-              <p className="step-sub">
-                LessonGrove will detect your book's chapter structure so you can review and edit it before building the schedule.
-              </p>
+              <p className="step-sub">LessonGrove will detect your book's chapter structure so you can review and edit it before building the schedule.</p>
             </div>
             <UploadForm onResult={handleUploadResult} disabled={false} />
             {error && <p className="error-banner" role="alert" style={{ marginTop: 12 }}>{error}</p>}
           </div>
         )}
 
-        {mode === 'full' && fullStep === 'uploading' && (
+        {page === PAGES.CURRICULUM && fullStep === 'uploading' && (
           <div className="loading-state">
             <div className="spinner" role="status" aria-label="Analysing structure" />
             <p className="loading-title">Reading textbook structure…</p>
@@ -291,43 +381,32 @@ export default function App() {
           </div>
         )}
 
-        {mode === 'full' && fullStep === 'structure' && uploadData && (
+        {page === PAGES.CURRICULUM && fullStep === 'structure' && uploadData && (
           <div className="structure-step">
             <div className="step-header">
               <p className="step-kicker">Step 2 of 3 — Review detected structure</p>
               <h1 className="step-title">Does this look right?</h1>
-              <p className="step-sub">
-                Check that LessonGrove found the right chapters. Click any chapter title to rename it, or merge adjacent chapters.
-              </p>
+              <p className="step-sub">Check that LessonGrove found the right chapters. Click any chapter title to rename it, or merge adjacent chapters.</p>
               {structureSaving && <p className="step-saving">Saving…</p>}
             </div>
-
             <div className="structure-layout">
-              <StructureView
-                data={uploadData}
-                editable
-                onStructureChange={handleStructureChange}
-              />
+              <StructureView data={uploadData} editable onStructureChange={handleStructureChange} />
               <aside className="structure-aside">
-                <CourseForm
-                  onSubmit={handlePace}
-                  disabled={false}
-                  defaultScaffolding={scaffolding}
-                />
+                <CourseForm onSubmit={handlePace} disabled={false} defaultScaffolding={scaffolding} />
                 {error && <p className="error-banner" role="alert" style={{ marginTop: 12 }}>{error}</p>}
               </aside>
             </div>
           </div>
         )}
 
-        {mode === 'full' && fullStep === 'pacing' && (
+        {page === PAGES.CURRICULUM && fullStep === 'pacing' && (
           <div className="loading-state">
             <div className="spinner" role="status" aria-label="Building schedule" />
             <p className="loading-title">Building your schedule…</p>
           </div>
         )}
 
-        {mode === 'full' && fullStep === 'schedule' && scheduleData && (
+        {page === PAGES.CURRICULUM && fullStep === 'schedule' && scheduleData && (
           <>
             {costEstimate && (
               <div className="cost-estimate-banner">
@@ -337,25 +416,18 @@ export default function App() {
               </div>
             )}
             <ScheduleGrid
-              data={scheduleData}
-              lessons={lessons}
-              isGenerating={isGenerating}
-              genProgress={genProgress}
-              onGenerateLessons={handleGenerateLessons}
-              onViewLesson={handleViewLesson}
-              onReset={reset}
-              error={error}
-              scaffolding={scaffolding}
+              data={scheduleData} lessons={lessons} isGenerating={isGenerating}
+              genProgress={genProgress} onGenerateLessons={handleGenerateLessons}
+              onViewLesson={handleViewLesson} onReset={resetCurriculum}
+              error={error} scaffolding={scaffolding}
             />
           </>
         )}
 
-        {mode === 'full' && fullStep === 'lesson' && activeLesson && (
+        {page === PAGES.CURRICULUM && fullStep === 'lesson' && activeLesson && (
           <LessonView
-            lesson={activeLesson}
-            onBack={handleBackToSchedule}
-            onLessonUpdate={handleLessonUpdate}
-            sessionId={uploadData?.session_id}
+            lesson={activeLesson} onBack={handleBackToSchedule}
+            onLessonUpdate={handleLessonUpdate} sessionId={uploadData?.session_id}
           />
         )}
 
