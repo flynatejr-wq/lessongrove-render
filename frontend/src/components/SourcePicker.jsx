@@ -17,7 +17,35 @@ export default function SourcePicker({ onIngested, onBack }) {
   const [url, setUrl] = useState('')
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState(null)
+  const [dragOver, setDragOver] = useState(false)
+  const [droppedName, setDroppedName] = useState(null)
   const fileRef = useRef(null)
+
+  function handleDragOver(e) {
+    e.preventDefault()
+    setDragOver(true)
+  }
+
+  function handleDragLeave() {
+    setDragOver(false)
+  }
+
+  function handleDrop(e) {
+    e.preventDefault()
+    setDragOver(false)
+    const file = e.dataTransfer.files?.[0]
+    if (!file) return
+    const dt = new DataTransfer()
+    dt.items.add(file)
+    fileRef.current.files = dt.files
+    setDroppedName(file.name)
+  }
+
+  const dropProps = {
+    onDragOver: handleDragOver,
+    onDragLeave: handleDragLeave,
+    onDrop: handleDrop,
+  }
 
   const selected = SOURCE_TYPES.find(s => s.id === sourceType)
 
@@ -84,7 +112,7 @@ export default function SourcePicker({ onIngested, onBack }) {
             role="tab"
             aria-selected={sourceType === s.id}
             className={`source-tab${sourceType === s.id ? ' source-tab--active' : ''}`}
-            onClick={() => { setSourceType(s.id); setError(null); setUrl('') }}
+            onClick={() => { setSourceType(s.id); setError(null); setUrl(''); setDroppedName(null) }}
           >
             <span className="source-tab-icon" aria-hidden="true">{s.icon}</span>
             <span className="source-tab-label">{s.label}</span>
@@ -97,17 +125,20 @@ export default function SourcePicker({ onIngested, onBack }) {
       <form onSubmit={handleSubmit} className="source-form">
 
         {(sourceType === 'pdf') && (
-          <label className="file-drop">
+          <label className={`file-drop${dragOver ? ' file-drop--over' : ''}`} {...dropProps}>
             <input
               ref={fileRef}
               type="file"
               accept=".pdf,application/pdf"
               className="file-drop-input"
               aria-label="Upload PDF"
+              onChange={e => setDroppedName(e.target.files?.[0]?.name || null)}
             />
             <span className="file-drop-label">
               <span className="file-drop-icon" aria-hidden="true">📄</span>
-              <span>Drop a PDF here or <strong>browse</strong></span>
+              {droppedName
+                ? <span><strong>{droppedName}</strong> — ready</span>
+                : <span>Drop a PDF here or <strong>browse</strong></span>}
             </span>
           </label>
         )}
@@ -147,33 +178,39 @@ export default function SourcePicker({ onIngested, onBack }) {
         )}
 
         {sourceType === 'docx' && (
-          <label className="file-drop">
+          <label className={`file-drop${dragOver ? ' file-drop--over' : ''}`} {...dropProps}>
             <input
               ref={fileRef}
               type="file"
               accept=".docx,application/vnd.openxmlformats-officedocument.wordprocessingml.document"
               className="file-drop-input"
               aria-label="Upload Word document"
+              onChange={e => setDroppedName(e.target.files?.[0]?.name || null)}
             />
             <span className="file-drop-label">
               <span className="file-drop-icon" aria-hidden="true">📝</span>
-              <span>Drop a .docx file here or <strong>browse</strong></span>
+              {droppedName
+                ? <span><strong>{droppedName}</strong> — ready</span>
+                : <span>Drop a .docx file here or <strong>browse</strong></span>}
             </span>
           </label>
         )}
 
         {sourceType === 'image' && (
-          <label className="file-drop">
+          <label className={`file-drop${dragOver ? ' file-drop--over' : ''}`} {...dropProps}>
             <input
               ref={fileRef}
               type="file"
               accept="image/jpeg,image/png,image/gif,image/webp"
               className="file-drop-input"
               aria-label="Upload image"
+              onChange={e => setDroppedName(e.target.files?.[0]?.name || null)}
             />
             <span className="file-drop-label">
               <span className="file-drop-icon" aria-hidden="true">🖼</span>
-              <span>Drop an image here or <strong>browse</strong> (JPEG, PNG, WebP)</span>
+              {droppedName
+                ? <span><strong>{droppedName}</strong> — ready</span>
+                : <span>Drop an image here or <strong>browse</strong> (JPEG, PNG, WebP)</span>}
             </span>
           </label>
         )}
