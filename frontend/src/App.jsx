@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react'
 import Home from './components/Home.jsx'
+import GeneratingLoader from './components/GeneratingLoader.jsx'
 import Onboarding from './components/Onboarding.jsx'
 import QuickFlow from './components/QuickFlow.jsx'
 import UploadForm from './components/UploadForm.jsx'
@@ -374,11 +375,7 @@ export default function App() {
         )}
 
         {page === PAGES.CURRICULUM && fullStep === 'uploading' && (
-          <div className="loading-state">
-            <div className="spinner" role="status" aria-label="Analysing structure" />
-            <p className="loading-title">Reading textbook structure…</p>
-            <p className="loading-sub">Detecting chapters and page ranges. Takes a few seconds for large files.</p>
-          </div>
+          <GeneratingLoader outputType="structure" title="Reading textbook structure…" />
         )}
 
         {page === PAGES.CURRICULUM && fullStep === 'structure' && uploadData && (
@@ -400,10 +397,7 @@ export default function App() {
         )}
 
         {page === PAGES.CURRICULUM && fullStep === 'pacing' && (
-          <div className="loading-state">
-            <div className="spinner" role="status" aria-label="Building schedule" />
-            <p className="loading-title">Building your schedule…</p>
-          </div>
+          <GeneratingLoader outputType="curriculum" title="Building your schedule…" />
         )}
 
         {page === PAGES.CURRICULUM && fullStep === 'schedule' && scheduleData && (

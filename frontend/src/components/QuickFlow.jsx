@@ -4,6 +4,7 @@ import StructureView from './StructureView.jsx'
 import LessonView from './LessonView.jsx'
 import AssignmentView from './AssignmentView.jsx'
 import ProfessorOutputView from './ProfessorOutputView.jsx'
+import GeneratingLoader from './GeneratingLoader.jsx'
 import { quickLesson } from '../api.js'
 
 const ASSIGNMENT_TYPES = [
@@ -146,11 +147,10 @@ export default function QuickFlow({ onBack, defaultScaffolding = 'standard' }) {
   // ── Loading ───────────────────────────────────────────────────────────────
   if (step === 'generating') {
     return (
-      <div className="loading-state">
-        <div className="spinner" role="status" aria-label="Generating" />
-        <p className="loading-title">Writing your {OUTPUT_TYPES.find(t => t.id === outputType)?.label.toLowerCase() || outputType.replace('_', ' ')}…</p>
-        <p className="loading-sub">LessonGrove is reading your source and grounding every section in the real content.</p>
-      </div>
+      <GeneratingLoader
+        outputType={outputType === 'assignment' ? assignmentType : outputType}
+        title={`Writing your ${OUTPUT_TYPES.find(t => t.id === outputType)?.label.toLowerCase() || 'content'}…`}
+      />
     )
   }
 
