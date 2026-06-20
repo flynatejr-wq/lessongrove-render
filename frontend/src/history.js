@@ -38,3 +38,14 @@ export function deleteFromHistory(id) {
 export function hasHistory() {
   return getAllHistory().length > 0
 }
+
+const PROF_KEY = 'lessongrove_prof_outputs'
+
+export function saveOutputToHistory(output) {
+  try {
+    const list = JSON.parse(localStorage.getItem(PROF_KEY) || '[]')
+    list.unshift({ ...output, _saved_at: new Date().toISOString() })
+    if (list.length > 50) list.splice(50)
+    localStorage.setItem(PROF_KEY, JSON.stringify(list))
+  } catch {}
+}

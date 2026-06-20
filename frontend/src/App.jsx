@@ -2,6 +2,9 @@ import { useState, useEffect } from 'react'
 import Home from './components/Home.jsx'
 import GeneratingLoader from './components/GeneratingLoader.jsx'
 import Onboarding from './components/Onboarding.jsx'
+import LandingPage from './components/auth/LandingPage.jsx'
+import SignUp from './components/auth/SignUp.jsx'
+import LogIn from './components/auth/LogIn.jsx'
 import QuickFlow from './components/QuickFlow.jsx'
 import UploadForm from './components/UploadForm.jsx'
 import StructureView from './components/StructureView.jsx'
@@ -16,6 +19,7 @@ import { saveTermToHistory, getAllHistory, deleteFromHistory } from './history.j
 const SETTINGS_KEY = 'lessongrove_settings'
 const THEME_KEY = 'lessongrove_theme'
 const PROFILE_KEY = 'lessongrove_profile'
+const USER_KEY = 'lg_user'
 
 function loadSettings() {
   try { return JSON.parse(localStorage.getItem(SETTINGS_KEY)) || {} } catch { return {} }
@@ -28,6 +32,12 @@ function loadProfile() {
 }
 function saveProfile(p) {
   try { localStorage.setItem(PROFILE_KEY, JSON.stringify(p)) } catch {}
+}
+function loadUser() {
+  try { return JSON.parse(localStorage.getItem(USER_KEY)) } catch { return null }
+}
+function saveUser(u) {
+  try { localStorage.setItem(USER_KEY, JSON.stringify(u)) } catch {}
 }
 function getInitialTheme() {
   try {
@@ -59,7 +69,11 @@ const PAGES = {
 
 export default function App() {
   const [theme, setTheme] = useState(getInitialTheme)
+  const [user, setUser] = useState(loadUser)
   const [profile, setProfile] = useState(loadProfile)
+  const [authScreen, setAuthScreen] = useState('landing') // 'landing' | 'signup' | 'login'
+  const [signupMode, setSignupMode] = useState('quick')
+  const [fromSignup, setFromSignup] = useState(false)
   const [page, setPage] = useState(PAGES.HOME)
   const [menuOpen, setMenuOpen] = useState(false)
   const [pageKey, setPageKey] = useState(0)
@@ -70,6 +84,24 @@ export default function App() {
   function stopNewPulse() {
     setNewPulse(false)
     try { localStorage.setItem('lg_new_clicked', '1') } catch {}
+  }
+
+  function handleSignupRequest(mode = 'quick') {
+    setSignupMode(mode)
+    setAuthScreen('signup')
+  }
+
+  function handleSignupComplete(newUser) {
+    saveUser(newUser)
+    setUser(newUser)
+    setFromSignup(true)
+    // profile not yet set → will show Onboarding
+  }
+
+  function handleLoginComplete(existingUser) {
+    saveUser(existingUser)
+    setUser(existingUser)
+    setFromSignup(false)
   }
 
   // Full curriculum state
@@ -103,6 +135,7 @@ export default function App() {
     saveProfile(p)
     setProfile(p)
     setScaffolding(p.scaffolding)
+    setFromSignup(false)
   }
 
   function handleSaveSettings(data) {
@@ -235,7 +268,34 @@ export default function App() {
   ]
   const showBreadcrumb = page === PAGES.CURRICULUM && !['upload','uploading'].includes(fullStep)
 
-  // Show onboarding for first-time users
+  // ── Unauthenticated: landing / sign up / log in ──────────────
+  if (!user) {
+    return (
+      <div className="app" data-theme={theme}>
+        {authScreen === 'landing' && (
+          <LandingPage
+            onSignup={handleSignupRequest}
+            onLogin={() => setAuthScreen('login')}
+          />
+        )}
+        {authScreen === 'signup' && (
+          <SignUp
+            signupMode={signupMode}
+            onComplete={handleSignupComplete}
+            onLogin={() => setAuthScreen('login')}
+          />
+        )}
+        {authScreen === 'login' && (
+          <LogIn
+            onComplete={handleLoginComplete}
+            onSignup={() => handleSignupRequest('quick')}
+          />
+        )}
+      </div>
+    )
+  }
+
+  // ── Authenticated but no profile: onboarding ─────────────────
   if (!profile) {
     return (
       <div className="app" data-theme={theme}>
@@ -247,7 +307,19 @@ export default function App() {
             </button>
           </div>
         </header>
-        <main className="main"><Onboarding onComplete={handleOnboardingComplete} /></main>
+        <main className="main">
+          {fromSignup && (
+            <div className="onboarding-steps">
+              <div className="onboarding-step-track">
+                <div className="onboarding-step-dot onboarding-step-dot--done">✓</div>
+                <div className="onboarding-step-line" />
+                <div className="onboarding-step-dot onboarding-step-dot--active">2</div>
+              </div>
+              <p className="onboarding-step-label">Step 2 of 2 — Set up your workspace</p>
+            </div>
+          )}
+          <Onboarding onComplete={handleOnboardingComplete} />
+        </main>
       </div>
     )
   }
