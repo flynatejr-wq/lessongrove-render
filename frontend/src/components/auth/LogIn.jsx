@@ -180,12 +180,6 @@ export default function LogIn({ onComplete, onSignup }) {
             </svg>
             Continue with Google
           </button>
-          <button className="auth-social-btn" type="button" disabled>
-            <svg width="18" height="18" viewBox="0 0 18 18" fill="none" aria-hidden="true">
-              <path d="M12.5 0c.07 1.06-.3 2.1-.92 2.86-.63.78-1.62 1.36-2.58 1.28-.1-1 .35-2.06.95-2.8C10.6.57 11.63.04 12.5 0zM15.85 12.57c-.44 1.1-.65 1.58-1.22 2.55-.78 1.32-1.88 2.96-3.24 2.97-1.2.01-1.52-.77-3.14-.76-1.62.01-1.97.77-3.18.76-1.36-.01-2.4-1.5-3.18-2.82-2.18-3.67-2.41-7.97-.87-10.26.98-1.52 2.53-2.4 3.98-2.4 1.5 0 2.44.8 3.67.8 1.2 0 1.93-.8 3.65-.8 1.28 0 2.64.67 3.61 1.82-3.17 1.73-2.65 6.23.92 7.14z" fill="currentColor"/>
-            </svg>
-            Continue with Apple
-          </button>
         </div>
 
         <p className="auth-footer-note">
