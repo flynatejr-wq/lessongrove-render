@@ -1,4 +1,5 @@
 import { useState } from 'react'
+import { supabase } from '../../supabase.js'
 
 function LogoMark() {
   return (
@@ -58,6 +59,7 @@ export default function SignUp({ onComplete, onLogin, signupMode }) {
   const [showConfirm, setShowConfirm] = useState(false)
   const [submitting, setSubmitting] = useState(false)
   const [success, setSuccess] = useState(false)
+  const [formErr, setFormErr] = useState(null)
 
   const strength = getStrength(fields.password)
   const showConfirmField = strength >= 2 && fields.password.length > 0
@@ -73,11 +75,20 @@ export default function SignUp({ onComplete, onLogin, signupMode }) {
     setTouched({ name: true, email: true, password: true, confirm: true })
     if (Object.keys(validate(fields)).length > 0) return
     setSubmitting(true)
-    await new Promise(r => setTimeout(r, 600))
-    const user = { name: fields.name.trim(), email: fields.email.trim(), createdAt: new Date().toISOString() }
-    try { localStorage.setItem('lg_user', JSON.stringify(user)) } catch {}
+    setFormErr(null)
+    const { data, error } = await supabase.auth.signUp({
+      email: fields.email.trim(),
+      password: fields.password,
+      options: { data: { name: fields.name.trim() } },
+    })
+    if (error) { setFormErr(error.message); setSubmitting(false); return }
+    const user = { id: data.user?.id, name: fields.name.trim(), email: fields.email.trim() }
     setSuccess(true)
     setTimeout(() => onComplete(user, signupMode), 700)
+  }
+
+  async function handleGoogle() {
+    await supabase.auth.signInWithOAuth({ provider: 'google' })
   }
 
   return (
@@ -156,6 +167,8 @@ export default function SignUp({ onComplete, onLogin, signupMode }) {
             </div>
           )}
 
+          {formErr && <p className="auth-login-err" role="alert">{formErr}</p>}
+
           <button
             type="submit"
             className={`btn-primary auth-submit${success ? ' auth-submit--done' : ''}`}
@@ -168,7 +181,7 @@ export default function SignUp({ onComplete, onLogin, signupMode }) {
         <div className="auth-divider"><span>or continue with</span></div>
 
         <div className="auth-social">
-          <button className="auth-social-btn" type="button" disabled>
+          <button className="auth-social-btn" type="button" onClick={handleGoogle}>
             <svg width="18" height="18" viewBox="0 0 18 18" fill="none" aria-hidden="true">
               <path d="M17.64 9.2a9.8 9.8 0 00-.16-1.7H9v3.22h4.84a4.14 4.14 0 01-1.8 2.72v2.26h2.92c1.7-1.57 2.68-3.88 2.68-6.5z" fill="#4285F4"/>
               <path d="M9 18c2.43 0 4.47-.8 5.96-2.18l-2.91-2.26c-.81.54-1.84.86-3.05.86-2.34 0-4.33-1.58-5.04-3.71H.96v2.34A9 9 0 009 18z" fill="#34A853"/>

@@ -1,4 +1,5 @@
 import { useState } from 'react'
+import { supabase } from '../../supabase.js'
 
 function LogoMark() {
   return (
@@ -45,15 +46,26 @@ export default function LogIn({ onComplete, onSignup }) {
     setEmailTouched(true); setPwTouched(true)
     if (!email.trim() || !password) return
     setSubmitting(true); setLoginErr(null)
-    await new Promise(r => setTimeout(r, 700))
-    const stored = (() => { try { return JSON.parse(localStorage.getItem('lg_user')) } catch { return null } })()
-    if (stored && stored.email === email.trim()) {
-      setSuccess(true)
-      setTimeout(() => onComplete(stored), 600)
-    } else {
-      setLoginErr('That email and password combination doesn\'t match. Try again or reset your password.')
+    const { data, error } = await supabase.auth.signInWithPassword({
+      email: email.trim(),
+      password,
+    })
+    if (error) {
+      setLoginErr("That email and password combination doesn't match. Try again or reset your password.")
       setSubmitting(false)
+      return
     }
+    const user = {
+      id: data.user.id,
+      name: data.user.user_metadata?.name || email.split('@')[0],
+      email: data.user.email,
+    }
+    setSuccess(true)
+    setTimeout(() => onComplete(user), 600)
+  }
+
+  async function handleGoogle() {
+    await supabase.auth.signInWithOAuth({ provider: 'google' })
   }
 
   async function handleReset(e) {
@@ -171,7 +183,7 @@ export default function LogIn({ onComplete, onSignup }) {
         <div className="auth-divider"><span>or continue with</span></div>
 
         <div className="auth-social">
-          <button className="auth-social-btn" type="button" disabled>
+          <button className="auth-social-btn" type="button" onClick={handleGoogle}>
             <svg width="18" height="18" viewBox="0 0 18 18" fill="none" aria-hidden="true">
               <path d="M17.64 9.2a9.8 9.8 0 00-.16-1.7H9v3.22h4.84a4.14 4.14 0 01-1.8 2.72v2.26h2.92c1.7-1.57 2.68-3.88 2.68-6.5z" fill="#4285F4"/>
               <path d="M9 18c2.43 0 4.47-.8 5.96-2.18l-2.91-2.26c-.81.54-1.84.86-3.05.86-2.34 0-4.33-1.58-5.04-3.71H.96v2.34A9 9 0 009 18z" fill="#34A853"/>

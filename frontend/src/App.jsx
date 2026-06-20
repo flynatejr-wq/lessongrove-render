@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react'
+import { supabase } from './supabase.js'
 import Home from './components/Home.jsx'
 import GeneratingLoader from './components/GeneratingLoader.jsx'
 import Onboarding from './components/Onboarding.jsx'
@@ -19,7 +20,6 @@ import { saveTermToHistory, getAllHistory, deleteFromHistory } from './history.j
 const SETTINGS_KEY = 'lessongrove_settings'
 const THEME_KEY = 'lessongrove_theme'
 const PROFILE_KEY = 'lessongrove_profile'
-const USER_KEY = 'lg_user'
 
 function loadSettings() {
   try { return JSON.parse(localStorage.getItem(SETTINGS_KEY)) || {} } catch { return {} }
@@ -33,11 +33,9 @@ function loadProfile() {
 function saveProfile(p) {
   try { localStorage.setItem(PROFILE_KEY, JSON.stringify(p)) } catch {}
 }
-function loadUser() {
-  try { return JSON.parse(localStorage.getItem(USER_KEY)) } catch { return null }
-}
-function saveUser(u) {
-  try { localStorage.setItem(USER_KEY, JSON.stringify(u)) } catch {}
+function userFromSupabase(sbUser) {
+  if (!sbUser) return null
+  return { id: sbUser.id, email: sbUser.email, name: sbUser.user_metadata?.name || sbUser.email.split('@')[0] }
 }
 function getInitialTheme() {
   try {
@@ -69,7 +67,8 @@ const PAGES = {
 
 export default function App() {
   const [theme, setTheme] = useState(getInitialTheme)
-  const [user, setUser] = useState(loadUser)
+  const [user, setUser] = useState(null)
+  const [authReady, setAuthReady] = useState(false)
   const [profile, setProfile] = useState(loadProfile)
   const [authScreen, setAuthScreen] = useState('landing') // 'landing' | 'signup' | 'login'
   const [signupMode, setSignupMode] = useState('quick')
@@ -91,17 +90,34 @@ export default function App() {
     setAuthScreen('signup')
   }
 
+  useEffect(() => {
+    supabase.auth.getSession().then(({ data: { session } }) => {
+      setUser(userFromSupabase(session?.user ?? null))
+      setAuthReady(true)
+    })
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
+      setUser(userFromSupabase(session?.user ?? null))
+      setAuthReady(true)
+    })
+    return () => subscription.unsubscribe()
+  }, [])
+
   function handleSignupComplete(newUser) {
-    saveUser(newUser)
     setUser(newUser)
     setFromSignup(true)
     // profile not yet set → will show Onboarding
   }
 
   function handleLoginComplete(existingUser) {
-    saveUser(existingUser)
     setUser(existingUser)
     setFromSignup(false)
+  }
+
+  async function handleSignOut() {
+    await supabase.auth.signOut()
+    setUser(null)
+    setProfile(null)
+    setAuthScreen('landing')
   }
 
   // Full curriculum state
@@ -267,6 +283,15 @@ export default function App() {
     { key: 'lessons',   label: '3. Lessons',   active: fullStep === 'lesson' },
   ]
   const showBreadcrumb = page === PAGES.CURRICULUM && !['upload','uploading'].includes(fullStep)
+
+  // ── Auth loading: wait for Supabase session check ────────────
+  if (!authReady) {
+    return (
+      <div className="app" data-theme={theme}>
+        <div className="auth-boot-loader" aria-label="Loading…" />
+      </div>
+    )
+  }
 
   // ── Unauthenticated: landing / sign up / log in ──────────────
   if (!user) {
@@ -442,6 +467,7 @@ export default function App() {
             onSave={handleSaveSettings}
             onThemeToggle={toggleTheme}
             onClearHistory={handleClearHistory}
+            onSignOut={handleSignOut}
           />
         )}
 

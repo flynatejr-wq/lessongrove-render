@@ -18,7 +18,7 @@ const STANDARDS = [
   { value: 'none', label: 'None' },
 ]
 
-export default function Settings({ profile, theme, onSave, onThemeToggle, onClearHistory }) {
+export default function Settings({ profile, theme, onSave, onThemeToggle, onClearHistory, onSignOut }) {
   const [userType, setUserType] = useState(profile?.userType || 'k12')
   const [subject, setSubject] = useState(profile?.subject || '')
   const [level, setLevel] = useState(profile?.level || '')
@@ -167,6 +167,13 @@ export default function Settings({ profile, theme, onSave, onThemeToggle, onClea
               <button type="button" className="btn-ghost" onClick={() => setConfirmClear(false)}>Cancel</button>
             </div>
           )}
+        </section>
+
+        <section className="settings-section settings-section--danger">
+          <h2 className="settings-section-title">Account</h2>
+          <button type="button" className="settings-clear-btn" onClick={onSignOut}>
+            Sign out
+          </button>
         </section>
 
       </div>
