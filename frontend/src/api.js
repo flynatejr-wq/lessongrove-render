@@ -45,8 +45,12 @@ export async function generateLessons(sessionId, onProgress, scaffolding = 'stan
   const reader = res.body.getReader()
   const decoder = new TextDecoder()
   let buffer = ''
+  const TIMEOUT_MS = 5 * 60 * 1000 // 5 minutes of silence = abort
   while (true) {
-    const { done, value } = await reader.read()
+    const timeoutPromise = new Promise((_, reject) =>
+      setTimeout(() => reject(new Error('Stream timed out — no data received for 5 minutes.')), TIMEOUT_MS)
+    )
+    const { done, value } = await Promise.race([reader.read(), timeoutPromise])
     if (done) break
     buffer += decoder.decode(value, { stream: true })
     const lines = buffer.split('\n')

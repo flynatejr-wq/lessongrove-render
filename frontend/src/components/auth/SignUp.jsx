@@ -58,6 +58,7 @@ export default function SignUp({ onComplete, onLogin, signupMode }) {
   const [showPw, setShowPw] = useState(false)
   const [showConfirm, setShowConfirm] = useState(false)
   const [submitting, setSubmitting] = useState(false)
+  const [googleLoading, setGoogleLoading] = useState(false)
   const [success, setSuccess] = useState(false)
   const [formErr, setFormErr] = useState(null)
 
@@ -90,6 +91,7 @@ export default function SignUp({ onComplete, onLogin, signupMode }) {
   async function handleGoogle() {
     setTouched({})
     setFormErr(null)
+    setGoogleLoading(true)
     await supabase.auth.signInWithOAuth({ provider: 'google' })
   }
 
@@ -183,14 +185,14 @@ export default function SignUp({ onComplete, onLogin, signupMode }) {
         <div className="auth-divider"><span>or continue with</span></div>
 
         <div className="auth-social">
-          <button className="auth-social-btn" type="button" onClick={handleGoogle}>
+          <button className="auth-social-btn" type="button" onClick={handleGoogle} disabled={googleLoading}>
             <svg width="18" height="18" viewBox="0 0 18 18" fill="none" aria-hidden="true">
               <path d="M17.64 9.2a9.8 9.8 0 00-.16-1.7H9v3.22h4.84a4.14 4.14 0 01-1.8 2.72v2.26h2.92c1.7-1.57 2.68-3.88 2.68-6.5z" fill="#4285F4"/>
               <path d="M9 18c2.43 0 4.47-.8 5.96-2.18l-2.91-2.26c-.81.54-1.84.86-3.05.86-2.34 0-4.33-1.58-5.04-3.71H.96v2.34A9 9 0 009 18z" fill="#34A853"/>
               <path d="M3.96 10.71A5.41 5.41 0 013.68 9c0-.59.1-1.17.28-1.71V4.95H.96A9 9 0 000 9c0 1.45.35 2.82.96 4.05l3-2.34z" fill="#FBBC05"/>
               <path d="M9 3.58c1.32 0 2.51.45 3.44 1.35l2.58-2.58C13.46.89 11.43 0 9 0A9 9 0 00.96 4.95l3 2.34C4.67 5.16 6.66 3.58 9 3.58z" fill="#EA4335"/>
             </svg>
-            Continue with Google
+            {googleLoading ? 'Redirecting…' : 'Continue with Google'}
           </button>
         </div>
 
