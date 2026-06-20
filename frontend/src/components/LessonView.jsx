@@ -44,7 +44,7 @@ function ExportMarkdown({ lesson }) {
   )
 }
 
-function RegenerateBtn({ label, section, sessionId, sessionNumber, scaffolding, standards, onDone, isQuick }) {
+function RegenerateBtn({ label, section, sessionId, sessionNumber, scaffolding, standards, onDone, onRegenStart, onRegenEnd, isQuick }) {
   const [loading, setLoading] = useState(false)
   const [err, setErr] = useState(null)
 
@@ -52,6 +52,7 @@ function RegenerateBtn({ label, section, sessionId, sessionNumber, scaffolding, 
 
   async function handle() {
     setLoading(true); setErr(null)
+    if (onRegenStart) onRegenStart(section)
     try {
       const result = await regenerateSection(sessionId, sessionNumber, section, scaffolding, standards)
       onDone(section, result.data)
@@ -59,6 +60,7 @@ function RegenerateBtn({ label, section, sessionId, sessionNumber, scaffolding, 
       setErr(e.message)
     } finally {
       setLoading(false)
+      if (onRegenEnd) onRegenEnd(section)
     }
   }
 
@@ -75,11 +77,19 @@ function RegenerateBtn({ label, section, sessionId, sessionNumber, scaffolding, 
 export default function LessonView({ lesson: initialLesson, onBack, isQuick = false, sessionId = null }) {
   const [lesson, setLesson] = useState(initialLesson)
   const [flagging, setFlagging] = useState(false)
+  const [flagShook, setFlagShook] = useState(false)
   const [flagReason, setFlagReason] = useState('')
   const [flagSent, setFlagSent] = useState(false)
   const [flagErr, setFlagErr] = useState(null)
   const [copied, setCopied] = useState(false)
   const [saved, setSaved] = useState(!isQuick)  // full-mode lessons are always auto-saved
+  const [regenSection, setRegenSection] = useState(null)
+
+  function handleFlagClick() {
+    setFlagging(true)
+    setFlagShook(true)
+    setTimeout(() => setFlagShook(false), 300)
+  }
 
   function handleSave() {
     try {
@@ -133,7 +143,13 @@ export default function LessonView({ lesson: initialLesson, onBack, isQuick = fa
     ? 'Quick Lesson'
     : `Session ${lesson.session_number} · Week ${lesson.week_number}, Day ${lesson.day_number}`
 
-  const regenProps = { sessionId, sessionNumber: lesson.session_number, scaffolding: lesson.scaffolding_level, standards: lesson.standards_framework, isQuick, onDone: patchLesson }
+  const regenProps = {
+    sessionId, sessionNumber: lesson.session_number,
+    scaffolding: lesson.scaffolding_level, standards: lesson.standards_framework,
+    isQuick, onDone: patchLesson,
+    onRegenStart: s => setRegenSection(s),
+    onRegenEnd: () => setRegenSection(null),
+  }
 
   return (
     <div className="lesson-view">
@@ -185,7 +201,7 @@ export default function LessonView({ lesson: initialLesson, onBack, isQuick = fa
 
           <div className="lesson-body">
             {lesson.learning_objectives?.length > 0 && (
-              <section className="lesson-section" aria-labelledby="obj-heading">
+              <section className={`lesson-section${regenSection === 'learning_objectives' ? ' lesson-section--regenerating' : ''}`} aria-labelledby="obj-heading">
                 <div className="lesson-section-hdr">
                   <h2 className="lesson-section-heading" id="obj-heading">Learning objectives</h2>
                   <RegenerateBtn label="learning objectives" section="learning_objectives" {...regenProps} />
@@ -206,7 +222,7 @@ export default function LessonView({ lesson: initialLesson, onBack, isQuick = fa
             )}
 
             {lesson.key_concepts?.length > 0 && (
-              <section className="lesson-section" aria-labelledby="kc-heading">
+              <section className={`lesson-section${regenSection === 'key_concepts' ? ' lesson-section--regenerating' : ''}`} aria-labelledby="kc-heading">
                 <div className="lesson-section-hdr">
                   <h2 className="lesson-section-heading" id="kc-heading">Key concepts</h2>
                   <RegenerateBtn label="key concepts" section="key_concepts" {...regenProps} />
@@ -226,7 +242,7 @@ export default function LessonView({ lesson: initialLesson, onBack, isQuick = fa
             )}
 
             {lesson.activities?.length > 0 && (
-              <section className="lesson-section" aria-labelledby="act-heading">
+              <section className={`lesson-section${regenSection === 'activities' ? ' lesson-section--regenerating' : ''}`} aria-labelledby="act-heading">
                 <div className="lesson-section-hdr">
                   <h2 className="lesson-section-heading" id="act-heading">Classroom activities</h2>
                   <RegenerateBtn label="activities" section="activities" {...regenProps} />
@@ -249,7 +265,7 @@ export default function LessonView({ lesson: initialLesson, onBack, isQuick = fa
             )}
 
             {lesson.assessment_questions?.length > 0 && (
-              <section className="lesson-section" aria-labelledby="aq-heading">
+              <section className={`lesson-section${regenSection === 'assessment_questions' ? ' lesson-section--regenerating' : ''}`} aria-labelledby="aq-heading">
                 <div className="lesson-section-hdr">
                   <h2 className="lesson-section-heading" id="aq-heading">Assessment questions</h2>
                   <RegenerateBtn label="assessment questions" section="assessment_questions" {...regenProps} />
@@ -269,7 +285,7 @@ export default function LessonView({ lesson: initialLesson, onBack, isQuick = fa
             )}
 
             {(lesson.homework !== null && lesson.homework !== undefined) && (
-              <section className="lesson-section" aria-labelledby="hw-heading">
+              <section className={`lesson-section${regenSection === 'homework' ? ' lesson-section--regenerating' : ''}`} aria-labelledby="hw-heading">
                 <div className="lesson-section-hdr">
                   <h2 className="lesson-section-heading" id="hw-heading">Homework</h2>
                   <RegenerateBtn label="homework" section="homework" {...regenProps} />
@@ -309,7 +325,10 @@ export default function LessonView({ lesson: initialLesson, onBack, isQuick = fa
                   </div>
                 </div>
               ) : (
-                <button className="flag-btn" onClick={() => setFlagging(true)}>
+                <button
+                  className={`flag-btn${flagShook ? ' flag-btn--shake' : ''}`}
+                  onClick={handleFlagClick}
+                >
                   ⚑ This doesn't match my textbook
                 </button>
               )}

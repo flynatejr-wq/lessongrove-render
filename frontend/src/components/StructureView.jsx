@@ -10,6 +10,12 @@ export default function StructureView({
   const [editingIdx, setEditingIdx] = useState(null)
   const [editTitle, setEditTitle] = useState('')
   const [dirty, setDirty] = useState(false)
+  const [flashIdx, setFlashIdx] = useState(null)
+
+  function flash(idx) {
+    setFlashIdx(idx)
+    setTimeout(() => setFlashIdx(null), 400)
+  }
 
   const maxPages = Math.max(...chapters.map(ch => (ch.end_page ?? ch.start_page) - ch.start_page + 1), 1)
 
@@ -40,6 +46,7 @@ export default function StructureView({
     const updated = [...chapters.slice(0, idx), merged, ...chapters.slice(idx + 2)]
     setChapters(updated)
     setDirty(true)
+    flash(idx)
   }
 
   function deleteChapter(idx) {
@@ -47,6 +54,7 @@ export default function StructureView({
     const updated = chapters.filter((_, i) => i !== idx)
     setChapters(updated)
     setDirty(true)
+    flash(Math.max(0, idx - 1))
   }
 
   function saveChanges() {
@@ -95,7 +103,11 @@ export default function StructureView({
           const isEditing = editingIdx === i
 
           return (
-            <div key={i}>
+            <div
+              key={i}
+              className={`chapter-row${flashIdx === i ? ' chapter-row--flash' : ''}`}
+              style={{ '--i': i }}
+            >
               <div
                 className={[
                   'chapter-card',

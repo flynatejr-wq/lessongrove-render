@@ -62,6 +62,15 @@ export default function App() {
   const [profile, setProfile] = useState(loadProfile)
   const [page, setPage] = useState(PAGES.HOME)
   const [menuOpen, setMenuOpen] = useState(false)
+  const [pageKey, setPageKey] = useState(0)
+  const [newPulse, setNewPulse] = useState(
+    () => { try { return !localStorage.getItem('lg_new_clicked') } catch { return true } }
+  )
+
+  function stopNewPulse() {
+    setNewPulse(false)
+    try { localStorage.setItem('lg_new_clicked', '1') } catch {}
+  }
 
   // Full curriculum state
   const [fullStep, setFullStep] = useState('upload')
@@ -111,6 +120,7 @@ export default function App() {
 
   function navigate(p) {
     setPage(p)
+    setPageKey(k => k + 1)
     setMenuOpen(false)
     if (p !== PAGES.CURRICULUM) {
       setFullStep('upload'); setUploadData(null); setScheduleData(null)
@@ -283,8 +293,8 @@ export default function App() {
 
           <div className="header-right">
             <button
-              className="btn-new"
-              onClick={() => navigate(PAGES.QUICK)}
+              className={`btn-new${newPulse && page === PAGES.HOME ? ' btn-new--pulse' : ''}`}
+              onClick={() => { stopNewPulse(); navigate(PAGES.QUICK) }}
               aria-label="New quick lesson"
             >
               + New
@@ -332,6 +342,7 @@ export default function App() {
       </header>
 
       <main className="main" id="main-content">
+        <div key={pageKey} className="page-content">
 
         {page === PAGES.HOME && (
           <Home
@@ -425,6 +436,7 @@ export default function App() {
           />
         )}
 
+        </div>
       </main>
     </div>
   )
