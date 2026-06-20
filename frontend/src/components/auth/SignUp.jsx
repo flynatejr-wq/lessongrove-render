@@ -88,6 +88,8 @@ export default function SignUp({ onComplete, onLogin, signupMode }) {
   }
 
   async function handleGoogle() {
+    setTouched({})
+    setFormErr(null)
     await supabase.auth.signInWithOAuth({ provider: 'google' })
   }
 
