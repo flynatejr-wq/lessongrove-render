@@ -1869,3 +1869,136 @@ body {
 .settings-confirm-text { font-size: 13px; color: var(--tx-2); }
 
 @keyframes fadeIn { from { opacity: 0; transform: translateY(6px); } to { opacity: 1; transform: translateY(0); } }
+
+/* ══════════════════════════════════════════════════════════════
+   OUTPUT TYPE GRID (Quick flow — professor-aware)
+══════════════════════════════════════════════════════════════ */
+.output-type-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+  gap: 10px;
+}
+.output-type-card {
+  display: flex; flex-direction: column; gap: 4px;
+  padding: 12px 14px; border-radius: var(--radius-sm);
+  border: 1px solid var(--rule); background: var(--card);
+  cursor: pointer; text-align: left; font-family: var(--font-body);
+  transition: all 0.15s;
+}
+.output-type-card:hover { border-color: var(--terra); }
+.output-type-card--active {
+  border-color: var(--ember); border-width: 2px;
+  background: color-mix(in srgb, var(--ember) 6%, var(--card));
+}
+.output-type-card-label { font-size: 13px; font-weight: 700; color: var(--tx-1); }
+.output-type-card-desc  { font-size: 11px; color: var(--tx-2); line-height: 1.4; }
+
+/* ══════════════════════════════════════════════════════════════
+   SAVE BUTTON STATE
+══════════════════════════════════════════════════════════════ */
+.lesson-action-btn--saved {
+  background: color-mix(in srgb, var(--ember) 12%, var(--card)) !important;
+  border-color: var(--ember) !important;
+  color: var(--ember) !important;
+  cursor: default;
+}
+
+/* ══════════════════════════════════════════════════════════════
+   PROFESSOR OUTPUT VIEWS
+══════════════════════════════════════════════════════════════ */
+.prof-output-typetag {
+  display: inline-block; margin-bottom: 8px;
+  font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.08em;
+  color: var(--terra); background: color-mix(in srgb, var(--terra) 10%, var(--fog));
+  padding: 3px 10px; border-radius: 4px;
+}
+.prof-overview { font-size: 14px; color: var(--tx-2); line-height: 1.65; }
+
+/* Lecture outline */
+.prof-points { list-style: none; padding: 0; margin: 0; display: flex; flex-direction: column; gap: 8px; }
+.prof-point {
+  display: flex; align-items: flex-start; justify-content: space-between; gap: 12px;
+  padding: 10px 14px; border-radius: var(--radius-sm);
+  background: var(--fog); font-size: 14px; line-height: 1.6; color: var(--tx-1);
+}
+.prof-point::before {
+  content: '›'; color: var(--terra); font-size: 18px; line-height: 1.4;
+  flex-shrink: 0; margin-top: -1px;
+}
+
+/* Discussion prompts */
+.prof-prompts { display: flex; flex-direction: column; gap: 20px; }
+.prof-prompt-card {
+  border: 1px solid var(--rule); border-radius: var(--radius);
+  padding: 20px; background: var(--card);
+}
+.prof-prompt-hdr { display: flex; align-items: flex-start; gap: 14px; margin-bottom: 14px; }
+.prof-prompt-num {
+  flex-shrink: 0; width: 28px; height: 28px; border-radius: 50%;
+  background: var(--terra); color: #fff;
+  display: flex; align-items: center; justify-content: center;
+  font-size: 12px; font-weight: 700;
+}
+.prof-prompt-text { font-size: 15px; font-weight: 600; color: var(--tx-1); line-height: 1.5; flex: 1; }
+.prof-followups { border-top: 1px solid var(--rule); padding-top: 12px; }
+.prof-followups-label { font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.06em; color: var(--tx-2); margin-bottom: 8px; }
+.prof-followups ul { list-style: disc; padding-left: 18px; display: flex; flex-direction: column; gap: 6px; }
+.prof-followups li { font-size: 13px; color: var(--tx-2); line-height: 1.5; }
+
+/* Essay prompt */
+.prof-essay-context {
+  font-size: 14px; color: var(--tx-2); line-height: 1.65;
+  border-left: 3px solid var(--rule-md); padding-left: 14px; margin-bottom: 16px;
+}
+.prof-essay-prompt {
+  font-size: 16px; color: var(--tx-1); line-height: 1.7; font-weight: 500;
+  padding: 16px 20px; border-radius: var(--radius-sm);
+  background: color-mix(in srgb, var(--terra) 6%, var(--fog));
+  border-left: 3px solid var(--terra); margin-bottom: 12px;
+}
+.prof-word-count { font-size: 13px; color: var(--tx-2); }
+
+/* Rubric */
+.prof-rubric { overflow-x: auto; }
+.rubric-header, .rubric-row {
+  display: grid; grid-template-columns: 1.5fr 2fr 2fr 2fr;
+  gap: 0; border-bottom: 1px solid var(--rule);
+}
+.rubric-header {
+  font-size: 11px; font-weight: 700; text-transform: uppercase;
+  letter-spacing: 0.06em; color: var(--tx-2);
+  padding: 8px 12px; background: var(--fog);
+}
+.rubric-header span { padding: 0 8px; }
+.rubric-row { align-items: start; }
+.rubric-criterion {
+  padding: 14px 12px; display: flex; flex-direction: column; gap: 4px;
+  border-right: 1px solid var(--rule); background: var(--fog);
+}
+.rubric-criterion strong { font-size: 13px; color: var(--tx-1); }
+.rubric-weight { font-size: 11px; color: var(--terra); font-weight: 700; }
+.rubric-cell {
+  padding: 14px 12px; font-size: 12px; color: var(--tx-1); line-height: 1.5;
+  border-right: 1px solid var(--rule);
+}
+.rubric-cell--low { color: var(--tx-2); border-right: none; }
+
+/* Question bank */
+.qbank-list { display: flex; flex-direction: column; gap: 20px; }
+.qbank-item {
+  padding: 16px 20px; border-radius: var(--radius);
+  border: 1px solid var(--rule); background: var(--card);
+}
+.qbank-question-row { display: flex; align-items: flex-start; gap: 10px; margin-bottom: 10px; }
+.qbank-num { flex-shrink: 0; font-size: 13px; font-weight: 700; color: var(--terra); padding-top: 2px; }
+.qbank-question { font-size: 14px; font-weight: 600; color: var(--tx-1); line-height: 1.5; flex: 1; }
+.qbank-options { list-style: none; padding: 0; margin: 0 0 12px 0; display: flex; flex-direction: column; gap: 6px; }
+.qbank-option {
+  padding: 7px 12px; border-radius: var(--radius-sm);
+  border: 1px solid var(--rule); font-size: 13px; color: var(--tx-1);
+}
+.qbank-option--correct {
+  background: color-mix(in srgb, #2e7d32 12%, var(--card));
+  border-color: #2e7d32; color: #2e7d32; font-weight: 600;
+}
+.qbank-answer { font-size: 12px; color: var(--tx-2); border-top: 1px solid var(--rule); padding-top: 10px; }

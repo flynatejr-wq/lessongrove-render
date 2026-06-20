@@ -1,23 +1,29 @@
 import asyncio
 from fastapi import APIRouter, HTTPException
 from pydantic import BaseModel
-from app.schemas import SessionSlot, ScheduleUnit, LessonPlan, Assignment
-from app.services.lesson_generator import generate_lesson, generate_assignment
+from app.schemas import SessionSlot, ScheduleUnit
+from app.services.lesson_generator import (
+    generate_lesson, generate_assignment,
+    generate_lecture_outline, generate_discussion_prompts,
+    generate_essay_prompt, generate_question_bank,
+)
 from app.storage import get_session
 from app.config import settings
 
 router = APIRouter()
 
+PROFESSOR_TYPES = {"lecture_outline", "discussion_prompts", "essay_prompt", "question_bank"}
+
 
 class QuickLessonRequest(BaseModel):
     session_id: str
-    start_page: int | None = None   # None = use all content (non-PDF sources)
+    start_page: int | None = None
     end_page: int | None = None
     title: str = "Quick Lesson"
     scaffolding: str = "standard"
     standards: str | None = None
-    output_type: str = "lesson"             # "lesson" | "assignment"
-    assignment_type: str = "worksheet"      # "worksheet"|"problem_set"|"discussion_prompt"|"project_brief"
+    output_type: str = "lesson"
+    assignment_type: str = "worksheet"
 
 
 @router.post("/quick-lesson")
@@ -39,7 +45,6 @@ async def quick_lesson(req: QuickLessonRequest):
             raise HTTPException(status_code=400,
                                 detail=f"Page range must be between 1 and {total}, with start ≤ end.")
     else:
-        # Non-PDF: use all chunks
         start = 1
         end   = total
 
@@ -50,8 +55,23 @@ async def quick_lesson(req: QuickLessonRequest):
         page_count=end - start + 1,
     )
 
+    prof_kwargs = dict(
+        slot=slot, pages=session.pages,
+        scaffolding_level=req.scaffolding,
+        standards_framework=req.standards,
+        content_type=session.content_type,
+    )
+
     try:
-        if req.output_type == "assignment":
+        if req.output_type == "lecture_outline":
+            result = await asyncio.to_thread(generate_lecture_outline, **prof_kwargs)
+        elif req.output_type == "discussion_prompts":
+            result = await asyncio.to_thread(generate_discussion_prompts, **prof_kwargs)
+        elif req.output_type == "essay_prompt":
+            result = await asyncio.to_thread(generate_essay_prompt, **prof_kwargs)
+        elif req.output_type == "question_bank":
+            result = await asyncio.to_thread(generate_question_bank, **prof_kwargs)
+        elif req.output_type == "assignment":
             result = await asyncio.to_thread(
                 generate_assignment, slot, session.pages, req.scaffolding, req.standards,
                 req.assignment_type, session.content_type,

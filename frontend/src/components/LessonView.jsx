@@ -79,6 +79,18 @@ export default function LessonView({ lesson: initialLesson, onBack, isQuick = fa
   const [flagSent, setFlagSent] = useState(false)
   const [flagErr, setFlagErr] = useState(null)
   const [copied, setCopied] = useState(false)
+  const [saved, setSaved] = useState(!isQuick)  // full-mode lessons are always auto-saved
+
+  function handleSave() {
+    try {
+      const history = JSON.parse(localStorage.getItem('lessongrove_quick_saves') || '[]')
+      const entry = { ...lesson, _saved_at: new Date().toISOString() }
+      history.unshift(entry)
+      if (history.length > 50) history.splice(50)
+      localStorage.setItem('lessongrove_quick_saves', JSON.stringify(history))
+      setSaved(true)
+    } catch {}
+  }
 
   function patchLesson(section, data) {
     setLesson(prev => {
@@ -307,7 +319,15 @@ export default function LessonView({ lesson: initialLesson, onBack, isQuick = fa
 
         {/* ── Right rail — actions ── */}
         <aside className="lesson-aside-right" aria-label="Lesson actions">
-          <button className="lesson-action-btn lesson-action-btn--primary" onClick={() => window.print()}>
+          <button
+            className={`lesson-action-btn lesson-action-btn--primary${saved ? ' lesson-action-btn--saved' : ''}`}
+            onClick={isQuick ? handleSave : undefined}
+            disabled={saved}
+            title={saved ? 'Saved to My Lessons' : 'Save to My Lessons'}
+          >
+            <span aria-hidden="true">{saved ? '✓' : '💾'}</span> {saved ? 'Saved' : 'Save'}
+          </button>
+          <button className="lesson-action-btn" onClick={() => window.print()}>
             <span aria-hidden="true">🖨</span> Print
           </button>
           <button className="lesson-action-btn" onClick={handleCopy}>

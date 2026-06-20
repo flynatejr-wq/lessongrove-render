@@ -1,7 +1,14 @@
 import json
 import anthropic
 from app.config import settings
-from app.schemas import LessonPlan, LearningObjective, KeyConcept, Activity, AssessmentQuestion, SessionSlot, PageContent, Assignment, AssignmentTask
+from app.schemas import (
+    LessonPlan, LearningObjective, KeyConcept, Activity, AssessmentQuestion,
+    SessionSlot, PageContent, Assignment, AssignmentTask,
+    LectureOutline, LectureSection, LecturePoint,
+    DiscussionPrompts, DiscussionPromptItem,
+    EssayPrompt, RubricCriterion,
+    QuestionBank, QuestionBankItem,
+)
 
 _MAX_TEXT_CHARS = 60_000  # ~15k tokens — fits comfortably in claude-sonnet-4-6 context
 
@@ -384,3 +391,185 @@ def regenerate_section(
         raw = raw.split("\n", 1)[1].rsplit("```", 1)[0].strip()
 
     return json.loads(raw)
+
+
+# ── Professor output types ────────────────────────────────────────────────────
+
+def _prof_text(pages, slot, content_type):
+    if content_type == "pdf":
+        return _extract_text(pages, slot.start_page, slot.end_page), f"pp. {slot.start_page}–{slot.end_page}"
+    return _extract_all_text(pages), "Full document"
+
+
+def _llm(prompt, max_tokens=3000):
+    client = anthropic.Anthropic(api_key=settings.anthropic_api_key)
+    msg = client.messages.create(
+        model="claude-sonnet-4-6",
+        max_tokens=max_tokens,
+        messages=[{"role": "user", "content": prompt}],
+    )
+    raw = msg.content[0].text.strip()
+    if raw.startswith("```"):
+        raw = raw.split("\n", 1)[1].rsplit("```", 1)[0].strip()
+    return json.loads(raw)
+
+
+def generate_lecture_outline(
+    slot: SessionSlot,
+    pages: list[PageContent],
+    scaffolding_level: str = "standard",
+    standards_framework: str | None = None,
+    content_type: str = "pdf",
+) -> LectureOutline:
+    text, source_ref = _prof_text(pages, slot, content_type)
+    sc = _SCAFFOLDING_INSTRUCTIONS.get(scaffolding_level, _SCAFFOLDING_INSTRUCTIONS["standard"])
+    st = _STANDARDS_INSTRUCTIONS.get(standards_framework, "") if standards_framework else ""
+    schema = '''{"title":"string","overview":"string","sections":[{"heading":"string","duration_minutes":int_or_null,"points":[{"text":"string","page_ref":int_or_null}]}]}'''
+    prompt = f"""You are an expert educator writing a lecture outline for a college professor.
+
+SOURCE: {source_ref}
+{sc}
+{st}
+
+SOURCE EXCERPT
+{text or "(No extractable text.)"}
+
+---
+
+INSTRUCTIONS
+1. Write a structured lecture outline grounded STRICTLY in the excerpt above. No outside facts.
+2. Create 4–7 outline sections, each with a clear heading and 3–6 talking points.
+3. Each talking point must be a complete sentence a professor could speak directly.
+4. Include estimated duration_minutes per section (total 45–90 min for a typical class).
+5. Set page_ref on each talking point to the source page where that content appears.
+6. The overview (2–3 sentences) is professor-facing context for the session.
+
+Return ONLY valid JSON: {schema}"""
+    data = _llm(prompt, max_tokens=3500)
+    return LectureOutline(
+        session_number=slot.session_number, week_number=slot.week_number,
+        title=data["title"], source_ref=source_ref,
+        scaffolding_level=scaffolding_level, standards_framework=standards_framework,
+        overview=data.get("overview", ""),
+        sections=[
+            LectureSection(
+                heading=s["heading"], duration_minutes=s.get("duration_minutes"),
+                points=[LecturePoint(**p) for p in s.get("points", [])]
+            ) for s in data.get("sections", [])
+        ],
+    )
+
+
+def generate_discussion_prompts(
+    slot: SessionSlot,
+    pages: list[PageContent],
+    scaffolding_level: str = "standard",
+    standards_framework: str | None = None,
+    content_type: str = "pdf",
+) -> DiscussionPrompts:
+    text, source_ref = _prof_text(pages, slot, content_type)
+    sc = _SCAFFOLDING_INSTRUCTIONS.get(scaffolding_level, _SCAFFOLDING_INSTRUCTIONS["standard"])
+    schema = '''{"title":"string","overview":"string","prompts":[{"prompt":"string","follow_ups":["string"],"page_ref":int_or_null}]}'''
+    prompt = f"""You are an expert educator writing seminar discussion prompts for a college professor.
+
+SOURCE: {source_ref}
+{sc}
+
+SOURCE EXCERPT
+{text or "(No extractable text.)"}
+
+---
+
+INSTRUCTIONS
+1. Create 4–6 rich discussion prompts grounded STRICTLY in the excerpt. No outside facts.
+2. Each prompt must be open-ended, invite multiple perspectives, and require engagement with the text.
+3. Include 2–3 follow-up questions per prompt for when discussion stalls.
+4. Set page_ref to the source page most relevant to each prompt.
+5. The overview (1–2 sentences) is professor-facing context.
+
+Return ONLY valid JSON: {schema}"""
+    data = _llm(prompt, max_tokens=2500)
+    return DiscussionPrompts(
+        session_number=slot.session_number, week_number=slot.week_number,
+        title=data["title"], source_ref=source_ref,
+        scaffolding_level=scaffolding_level, standards_framework=standards_framework,
+        overview=data.get("overview", ""),
+        prompts=[DiscussionPromptItem(**p) for p in data.get("prompts", [])],
+    )
+
+
+def generate_essay_prompt(
+    slot: SessionSlot,
+    pages: list[PageContent],
+    scaffolding_level: str = "standard",
+    standards_framework: str | None = None,
+    content_type: str = "pdf",
+) -> EssayPrompt:
+    text, source_ref = _prof_text(pages, slot, content_type)
+    sc = _SCAFFOLDING_INSTRUCTIONS.get(scaffolding_level, _SCAFFOLDING_INSTRUCTIONS["standard"])
+    schema = '''{"title":"string","prompt":"string","context":"string","word_count_guidance":"string","rubric":[{"criterion":"string","weight":"string","excellent":"string","satisfactory":"string","needs_improvement":"string"}]}'''
+    prompt = f"""You are an expert educator writing an essay prompt and grading rubric for a college professor.
+
+SOURCE: {source_ref}
+{sc}
+
+SOURCE EXCERPT
+{text or "(No extractable text.)"}
+
+---
+
+INSTRUCTIONS
+1. Write ONE substantial essay prompt grounded STRICTLY in the excerpt. No outside facts.
+2. The prompt should require analysis, argument, or synthesis — not just summary.
+3. Include a context paragraph (2–3 sentences) giving students background for the essay.
+4. Include realistic word count guidance (e.g. "1,200–1,500 words").
+5. Write a 4–5 criterion rubric. Weights must sum to 100%. For each criterion include excellent, satisfactory, and needs_improvement descriptors.
+
+Return ONLY valid JSON: {schema}"""
+    data = _llm(prompt, max_tokens=3000)
+    return EssayPrompt(
+        session_number=slot.session_number, week_number=slot.week_number,
+        title=data["title"], source_ref=source_ref,
+        scaffolding_level=scaffolding_level, standards_framework=standards_framework,
+        prompt=data["prompt"], context=data.get("context", ""),
+        word_count_guidance=data.get("word_count_guidance", ""),
+        rubric=[RubricCriterion(**c) for c in data.get("rubric", [])],
+    )
+
+
+def generate_question_bank(
+    slot: SessionSlot,
+    pages: list[PageContent],
+    scaffolding_level: str = "standard",
+    standards_framework: str | None = None,
+    content_type: str = "pdf",
+) -> QuestionBank:
+    text, source_ref = _prof_text(pages, slot, content_type)
+    sc = _SCAFFOLDING_INSTRUCTIONS.get(scaffolding_level, _SCAFFOLDING_INSTRUCTIONS["standard"])
+    schema = '''{"title":"string","questions":[{"type":"multiple_choice|short_answer|essay","question":"string","options":["A. ...","B. ...","C. ...","D. ..."],"answer":"string","page_ref":int_or_null}]}'''
+    prompt = f"""You are an expert educator building an exam question bank for a college professor.
+
+SOURCE: {source_ref}
+{sc}
+
+SOURCE EXCERPT
+{text or "(No extractable text.)"}
+
+---
+
+INSTRUCTIONS
+1. Create 10–14 questions grounded STRICTLY in the excerpt. No outside facts.
+2. Include a mix: 5–6 multiple choice (4 options each, clear correct answer), 3–4 short answer, 2–3 essay questions.
+3. Multiple choice: options array must have exactly 4 items ("A. ...", "B. ...", etc.), answer is the letter only (e.g. "B").
+4. Short answer: answer is a model 2–4 sentence response. options = [].
+5. Essay: answer is a brief marking guide (what a strong response must cover). options = [].
+6. Set page_ref to the source page for each question.
+
+Return ONLY valid JSON: {schema}"""
+    data = _llm(prompt, max_tokens=4000)
+    return QuestionBank(
+        session_number=slot.session_number, week_number=slot.week_number,
+        title=data["title"], source_ref=source_ref,
+        scaffolding_level=scaffolding_level, standards_framework=standards_framework,
+        questions=[QuestionBankItem(**q) for q in data.get("questions", [])],
+    )

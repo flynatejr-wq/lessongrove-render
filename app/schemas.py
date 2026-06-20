@@ -249,6 +249,90 @@ class IngestResponse(BaseModel):
     message: str
 
 
+# ── Professor output types ───────────────────────────────────────────────────
+
+class LecturePoint(BaseModel):
+    text: str
+    page_ref: int | None = None
+
+
+class LectureSection(BaseModel):
+    heading: str
+    duration_minutes: int | None = None
+    points: list[LecturePoint]
+
+
+class LectureOutline(BaseModel):
+    schema_version: str = "1.0"
+    session_number: int = 1
+    week_number: int = 1
+    title: str
+    source_ref: str
+    scaffolding_level: str = "standard"
+    standards_framework: str | None = None
+    overview: str
+    sections: list[LectureSection]
+
+
+class DiscussionPromptItem(BaseModel):
+    prompt: str
+    follow_ups: list[str] = []
+    page_ref: int | None = None
+
+
+class DiscussionPrompts(BaseModel):
+    schema_version: str = "1.0"
+    session_number: int = 1
+    week_number: int = 1
+    title: str
+    source_ref: str
+    scaffolding_level: str = "standard"
+    standards_framework: str | None = None
+    overview: str
+    prompts: list[DiscussionPromptItem]
+
+
+class RubricCriterion(BaseModel):
+    criterion: str
+    weight: str
+    excellent: str
+    satisfactory: str
+    needs_improvement: str
+
+
+class EssayPrompt(BaseModel):
+    schema_version: str = "1.0"
+    session_number: int = 1
+    week_number: int = 1
+    title: str
+    source_ref: str
+    scaffolding_level: str = "standard"
+    standards_framework: str | None = None
+    prompt: str
+    context: str
+    word_count_guidance: str
+    rubric: list[RubricCriterion]
+
+
+class QuestionBankItem(BaseModel):
+    type: str          # "multiple_choice" | "short_answer" | "essay"
+    question: str
+    options: list[str] = []   # A/B/C/D for MC
+    answer: str
+    page_ref: int | None = None
+
+
+class QuestionBank(BaseModel):
+    schema_version: str = "1.0"
+    session_number: int = 1
+    week_number: int = 1
+    title: str
+    source_ref: str
+    scaffolding_level: str = "standard"
+    standards_framework: str | None = None
+    questions: list[QuestionBankItem]
+
+
 # ── Cost estimation ───────────────────────────────────────────────────────────
 
 class CostEstimateRequest(BaseModel):

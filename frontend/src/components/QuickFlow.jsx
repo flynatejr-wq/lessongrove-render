@@ -3,23 +3,48 @@ import SourcePicker from './SourcePicker.jsx'
 import StructureView from './StructureView.jsx'
 import LessonView from './LessonView.jsx'
 import AssignmentView from './AssignmentView.jsx'
+import ProfessorOutputView from './ProfessorOutputView.jsx'
 import { quickLesson } from '../api.js'
 
 const ASSIGNMENT_TYPES = [
-  { id: 'worksheet',        label: 'Worksheet',        desc: 'Structured questions guiding students through the content' },
-  { id: 'problem_set',      label: 'Problem set',      desc: 'Practice problems requiring application of concepts' },
-  { id: 'discussion_prompt',label: 'Discussion prompts',desc: 'Open-ended prompts for class or small-group discussion' },
-  { id: 'project_brief',    label: 'Project brief',    desc: 'Multi-step challenge with a real deliverable' },
+  { id: 'worksheet',         label: 'Worksheet',          desc: 'Structured questions guiding students through the content' },
+  { id: 'problem_set',       label: 'Problem set',        desc: 'Practice problems requiring application of concepts' },
+  { id: 'discussion_prompt', label: 'Discussion prompts', desc: 'Open-ended prompts for class or small-group discussion' },
+  { id: 'project_brief',     label: 'Project brief',      desc: 'Multi-step challenge with a real deliverable' },
 ]
 
+const K12_OUTPUT_TYPES = [
+  { id: 'lesson',      label: 'Lesson Plan',  desc: 'Objectives, activities, assessment, and homework' },
+  { id: 'assignment',  label: 'Assignment',   desc: 'Student-facing worksheet, problem set, or project' },
+]
+
+const PROF_OUTPUT_TYPES = [
+  { id: 'lesson',             label: 'Lesson Plan',         desc: 'Objectives, activities, assessment, and homework' },
+  { id: 'lecture_outline',    label: 'Lecture Outline',     desc: 'Structured outline with talking points for your lecture' },
+  { id: 'discussion_prompts', label: 'Discussion Prompts',  desc: 'Seminar-style questions grounded in your source material' },
+  { id: 'essay_prompt',       label: 'Essay Prompt + Rubric', desc: 'Essay question tied to source material with a grading rubric' },
+  { id: 'question_bank',      label: 'Question Bank',       desc: 'MC, short answer, and essay questions with answer keys' },
+  { id: 'assignment',         label: 'Assignment',          desc: 'Student-facing worksheet, problem set, or project' },
+]
+
+const PROFESSOR_OUTPUT_TYPES = new Set(['lecture_outline', 'discussion_prompts', 'essay_prompt', 'question_bank'])
+
+function loadProfile() {
+  try { return JSON.parse(localStorage.getItem('lessongrove_profile')) } catch { return null }
+}
+
 export default function QuickFlow({ onBack, defaultScaffolding = 'standard' }) {
-  const [step, setStep]   = useState('source')       // 'source' | 'configure' | 'generating' | 'result'
-  const [sourceData, setSourceData]     = useState(null)   // { sourceType, data: IngestResponse }
+  const profile = loadProfile()
+  const isProfessor = profile?.userType === 'professor'
+  const OUTPUT_TYPES = isProfessor ? PROF_OUTPUT_TYPES : K12_OUTPUT_TYPES
+
+  const [step, setStep]   = useState('source')
+  const [sourceData, setSourceData]     = useState(null)
   const [selectedChapterIdx, setSelectedChapterIdx] = useState(null)
   const [startPage, setStartPage] = useState('')
   const [endPage, setEndPage]     = useState('')
 
-  const [outputType, setOutputType]         = useState('lesson')       // 'lesson' | 'assignment'
+  const [outputType, setOutputType]         = useState('lesson')
   const [assignmentType, setAssignmentType] = useState('worksheet')
   const [scaffolding, setScaffolding]       = useState(defaultScaffolding)
 
@@ -95,6 +120,9 @@ export default function QuickFlow({ onBack, defaultScaffolding = 'standard' }) {
 
   // ── Result screens ────────────────────────────────────────────────────────
   if (step === 'result' && result) {
+    if (PROFESSOR_OUTPUT_TYPES.has(resultKind)) {
+      return <ProfessorOutputView output={result} outputType={resultKind} onBack={() => setStep('configure')} />
+    }
     if (resultKind === 'assignment') {
       return <AssignmentView assignment={result} isQuick onBack={() => setStep('configure')} />
     }
@@ -120,7 +148,7 @@ export default function QuickFlow({ onBack, defaultScaffolding = 'standard' }) {
     return (
       <div className="loading-state">
         <div className="spinner" role="status" aria-label="Generating" />
-        <p className="loading-title">Writing your {outputType === 'assignment' ? ASSIGNMENT_TYPES.find(t => t.id === assignmentType)?.label.toLowerCase() || 'assignment' : 'lesson plan'}…</p>
+        <p className="loading-title">Writing your {OUTPUT_TYPES.find(t => t.id === outputType)?.label.toLowerCase() || outputType.replace('_', ' ')}…</p>
         <p className="loading-sub">LessonGrove is reading your source and grounding every section in the real content.</p>
       </div>
     )
@@ -184,27 +212,23 @@ export default function QuickFlow({ onBack, defaultScaffolding = 'standard' }) {
           </div>
         )}
 
-        {/* Output type: lesson vs assignment */}
+        {/* Output type: profile-aware */}
         <div className="quick-options">
           <div className="quick-option-group">
             <span className="section-label">What do you need?</span>
-            <div className="output-type-toggle" role="group" aria-label="Output type">
-              <button
-                type="button"
-                className={`output-type-btn${outputType === 'lesson' ? ' output-type-btn--active' : ''}`}
-                onClick={() => setOutputType('lesson')}
-                aria-pressed={outputType === 'lesson'}
-              >
-                Lesson plan
-              </button>
-              <button
-                type="button"
-                className={`output-type-btn${outputType === 'assignment' ? ' output-type-btn--active' : ''}`}
-                onClick={() => setOutputType('assignment')}
-                aria-pressed={outputType === 'assignment'}
-              >
-                Assignment
-              </button>
+            <div className="output-type-grid" role="group" aria-label="Output type">
+              {OUTPUT_TYPES.map(t => (
+                <button
+                  key={t.id}
+                  type="button"
+                  className={`output-type-card${outputType === t.id ? ' output-type-card--active' : ''}`}
+                  onClick={() => setOutputType(t.id)}
+                  aria-pressed={outputType === t.id}
+                >
+                  <span className="output-type-card-label">{t.label}</span>
+                  <span className="output-type-card-desc">{t.desc}</span>
+                </button>
+              ))}
             </div>
           </div>
 
@@ -256,9 +280,7 @@ export default function QuickFlow({ onBack, defaultScaffolding = 'standard' }) {
             onClick={handleGenerate}
             disabled={isPdf && !startPage && selectedChapterIdx === null}
           >
-            Generate {outputType === 'assignment'
-              ? (ASSIGNMENT_TYPES.find(t => t.id === assignmentType)?.label.toLowerCase() || 'assignment')
-              : 'lesson plan'} →
+            Generate {OUTPUT_TYPES.find(t => t.id === outputType)?.label.toLowerCase() || outputType.replace('_', ' ')} →
           </button>
           <button className="btn-ghost" onClick={resetSource}>
             ← Change source
