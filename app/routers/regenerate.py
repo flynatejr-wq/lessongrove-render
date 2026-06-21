@@ -1,17 +1,22 @@
 import asyncio
-from fastapi import APIRouter, HTTPException
+from fastapi import APIRouter, Depends, HTTPException, Request
+from slowapi import Limiter
+from slowapi.util import get_remote_address
 from app.schemas import RegenerateSectionRequest, RegenerateSectionResponse
 from app.services.lesson_generator import regenerate_section
 from app.storage import get_session, update_session
 from app.config import settings
+from app.auth import get_current_user
 
 router = APIRouter()
+limiter = Limiter(key_func=get_remote_address)
 
 _VALID_SECTIONS = {"learning_objectives", "key_concepts", "activities", "assessment_questions", "homework"}
 
 
 @router.post("/regenerate-section", response_model=RegenerateSectionResponse)
-async def regen_section(req: RegenerateSectionRequest):
+@limiter.limit("30/hour")
+async def regen_section(request: Request, req: RegenerateSectionRequest, user_id: str = Depends(get_current_user)):
     if not settings.anthropic_api_key:
         raise HTTPException(status_code=500, detail="ANTHROPIC_API_KEY is not configured.")
     if req.section not in _VALID_SECTIONS:

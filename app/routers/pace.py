@@ -1,8 +1,9 @@
 from datetime import date, timedelta
-from fastapi import APIRouter, HTTPException
+from fastapi import APIRouter, Depends, HTTPException
 from app.schemas import PaceRequest, PaceResponse, Schedule
 from app.services.pacing_engine import build_schedule
 from app.storage import get_session, update_session
+from app.auth import get_current_user
 
 router = APIRouter()
 
@@ -42,7 +43,7 @@ def _assign_dates(schedule: Schedule, term_start_date: str, holidays: list[str])
 
 
 @router.post("/pace", response_model=PaceResponse)
-async def pace_curriculum(req: PaceRequest):
+async def pace_curriculum(req: PaceRequest, user_id: str = Depends(get_current_user)):
     session = get_session(req.session_id)
     if not session:
         raise HTTPException(status_code=404, detail="Session not found. Upload a PDF first.")

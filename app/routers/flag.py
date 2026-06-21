@@ -1,13 +1,14 @@
 from datetime import datetime, timezone
-from fastapi import APIRouter, HTTPException
+from fastapi import APIRouter, Depends, HTTPException
 from app.schemas import FlagLessonRequest, FlagLessonResponse, LessonFlag
 from app.storage import get_session, update_session
+from app.auth import get_current_user
 
 router = APIRouter()
 
 
 @router.post("/flag-lesson", response_model=FlagLessonResponse)
-async def flag_lesson(req: FlagLessonRequest):
+async def flag_lesson(req: FlagLessonRequest, user_id: str = Depends(get_current_user)):
     session = get_session(req.session_id)
     if not session:
         raise HTTPException(status_code=404, detail="Session not found.")

@@ -1,4 +1,11 @@
+import { supabase } from './supabase.js'
+
 const BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:8000'
+
+async function authHeader() {
+  const { data: { session } } = await supabase.auth.getSession()
+  return session?.access_token ? { Authorization: `Bearer ${session.access_token}` } : {}
+}
 
 async function handleResponse(res) {
   if (!res.ok) {
@@ -13,13 +20,17 @@ async function handleResponse(res) {
 export async function uploadPDF(file) {
   const form = new FormData()
   form.append('file', file)
-  return handleResponse(await fetch(`${BASE_URL}/upload`, { method: 'POST', body: form }))
+  return handleResponse(await fetch(`${BASE_URL}/upload`, {
+    method: 'POST',
+    headers: { ...(await authHeader()) },
+    body: form,
+  }))
 }
 
 export async function paceCurriculum(sessionId, totalWeeks, sessionsPerWeek, termStartDate = null, holidays = []) {
   return handleResponse(await fetch(`${BASE_URL}/pace`, {
     method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
+    headers: { 'Content-Type': 'application/json', ...(await authHeader()) },
     body: JSON.stringify({
       session_id: sessionId,
       total_weeks: totalWeeks,
@@ -33,7 +44,7 @@ export async function paceCurriculum(sessionId, totalWeeks, sessionsPerWeek, ter
 export async function generateLessons(sessionId, onProgress, scaffolding = 'standard', standards = null, resume = false) {
   const res = await fetch(`${BASE_URL}/generate`, {
     method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
+    headers: { 'Content-Type': 'application/json', ...(await authHeader()) },
     body: JSON.stringify({ session_id: sessionId, scaffolding, standards, resume }),
   })
   if (!res.ok) {
@@ -67,7 +78,7 @@ export async function generateLessons(sessionId, onProgress, scaffolding = 'stan
 export async function quickLesson(sessionId, startPage, endPage, title = 'Quick Lesson', scaffolding = 'standard', standards = null, outputType = 'lesson', assignmentType = 'worksheet') {
   return handleResponse(await fetch(`${BASE_URL}/quick-lesson`, {
     method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
+    headers: { 'Content-Type': 'application/json', ...(await authHeader()) },
     body: JSON.stringify({ session_id: sessionId, start_page: startPage, end_page: endPage, title, scaffolding, standards, output_type: outputType, assignment_type: assignmentType }),
   }))
 }
@@ -77,7 +88,7 @@ export async function quickLesson(sessionId, startPage, endPage, title = 'Quick 
 export async function ingestText(text, title = 'Pasted text') {
   return handleResponse(await fetch(`${BASE_URL}/ingest/text`, {
     method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
+    headers: { 'Content-Type': 'application/json', ...(await authHeader()) },
     body: JSON.stringify({ text, title }),
   }))
 }
@@ -85,7 +96,7 @@ export async function ingestText(text, title = 'Pasted text') {
 export async function ingestYoutube(url) {
   return handleResponse(await fetch(`${BASE_URL}/ingest/youtube`, {
     method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
+    headers: { 'Content-Type': 'application/json', ...(await authHeader()) },
     body: JSON.stringify({ url }),
   }))
 }
@@ -93,7 +104,7 @@ export async function ingestYoutube(url) {
 export async function ingestUrl(url) {
   return handleResponse(await fetch(`${BASE_URL}/ingest/url`, {
     method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
+    headers: { 'Content-Type': 'application/json', ...(await authHeader()) },
     body: JSON.stringify({ url }),
   }))
 }
@@ -101,19 +112,27 @@ export async function ingestUrl(url) {
 export async function ingestDocx(file) {
   const form = new FormData()
   form.append('file', file)
-  return handleResponse(await fetch(`${BASE_URL}/ingest/docx`, { method: 'POST', body: form }))
+  return handleResponse(await fetch(`${BASE_URL}/ingest/docx`, {
+    method: 'POST',
+    headers: { ...(await authHeader()) },
+    body: form,
+  }))
 }
 
 export async function ingestImage(file) {
   const form = new FormData()
   form.append('file', file)
-  return handleResponse(await fetch(`${BASE_URL}/ingest/image`, { method: 'POST', body: form }))
+  return handleResponse(await fetch(`${BASE_URL}/ingest/image`, {
+    method: 'POST',
+    headers: { ...(await authHeader()) },
+    body: form,
+  }))
 }
 
 export async function flagLesson(sessionId, sessionNumber, reason) {
   return handleResponse(await fetch(`${BASE_URL}/flag-lesson`, {
     method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
+    headers: { 'Content-Type': 'application/json', ...(await authHeader()) },
     body: JSON.stringify({ session_id: sessionId, session_number: sessionNumber, reason }),
   }))
 }
@@ -121,7 +140,7 @@ export async function flagLesson(sessionId, sessionNumber, reason) {
 export async function regenerateSection(sessionId, sessionNumber, section, scaffolding = 'standard', standards = null) {
   return handleResponse(await fetch(`${BASE_URL}/regenerate-section`, {
     method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
+    headers: { 'Content-Type': 'application/json', ...(await authHeader()) },
     body: JSON.stringify({ session_id: sessionId, session_number: sessionNumber, section, scaffolding, standards }),
   }))
 }
@@ -129,7 +148,7 @@ export async function regenerateSection(sessionId, sessionNumber, section, scaff
 export async function getCostEstimate(sessionId, totalSessions) {
   return handleResponse(await fetch(`${BASE_URL}/cost-estimate`, {
     method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
+    headers: { 'Content-Type': 'application/json', ...(await authHeader()) },
     body: JSON.stringify({ session_id: sessionId, total_sessions: totalSessions }),
   }))
 }
@@ -137,7 +156,7 @@ export async function getCostEstimate(sessionId, totalSessions) {
 export async function updateStructure(sessionId, chapters) {
   return handleResponse(await fetch(`${BASE_URL}/structure`, {
     method: 'PATCH',
-    headers: { 'Content-Type': 'application/json' },
+    headers: { 'Content-Type': 'application/json', ...(await authHeader()) },
     body: JSON.stringify({ session_id: sessionId, chapters }),
   }))
 }

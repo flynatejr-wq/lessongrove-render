@@ -1,6 +1,8 @@
 import asyncio
-from fastapi import APIRouter, HTTPException
+from fastapi import APIRouter, Depends, HTTPException, Request
 from pydantic import BaseModel
+from slowapi import Limiter
+from slowapi.util import get_remote_address
 from app.schemas import SessionSlot, ScheduleUnit
 from app.services.lesson_generator import (
     generate_lesson, generate_assignment,
@@ -9,8 +11,10 @@ from app.services.lesson_generator import (
 )
 from app.storage import get_session
 from app.config import settings
+from app.auth import get_current_user
 
 router = APIRouter()
+limiter = Limiter(key_func=get_remote_address)
 
 PROFESSOR_TYPES = {"lecture_outline", "discussion_prompts", "essay_prompt", "question_bank"}
 
@@ -27,7 +31,8 @@ class QuickLessonRequest(BaseModel):
 
 
 @router.post("/quick-lesson")
-async def quick_lesson(req: QuickLessonRequest):
+@limiter.limit("20/hour")
+async def quick_lesson(request: Request, req: QuickLessonRequest, user_id: str = Depends(get_current_user)):
     if not settings.anthropic_api_key:
         raise HTTPException(status_code=500,
                             detail="ANTHROPIC_API_KEY is not configured on the server.")

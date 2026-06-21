@@ -1,12 +1,16 @@
 import asyncio
-from fastapi import APIRouter, HTTPException
+from fastapi import APIRouter, Depends, HTTPException, Request
 from fastapi.responses import StreamingResponse
+from slowapi import Limiter
+from slowapi.util import get_remote_address
 from app.schemas import GenerateRequest, GenerateProgressEvent
 from app.services.lesson_generator import generate_lesson
 from app.storage import get_session, update_session
 from app.config import settings
+from app.auth import get_current_user
 
 router = APIRouter()
+limiter = Limiter(key_func=get_remote_address)
 
 
 def _build_prior_context(completed: dict, slots_so_far: list) -> str:
@@ -78,7 +82,8 @@ async def _stream_lessons(session_id: str, scaffolding: str, standards: str | No
 
 
 @router.post("/generate")
-async def generate_lessons(req: GenerateRequest):
+@limiter.limit("10/hour")
+async def generate_lessons(request: Request, req: GenerateRequest, user_id: str = Depends(get_current_user)):
     if not settings.anthropic_api_key:
         raise HTTPException(status_code=500,
                             detail="ANTHROPIC_API_KEY is not configured on the server. Add it to Render → Environment and redeploy.")

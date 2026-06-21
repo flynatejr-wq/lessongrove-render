@@ -1,17 +1,18 @@
 import asyncio
 import uuid
 from datetime import datetime
-from fastapi import APIRouter, File, HTTPException, UploadFile
+from fastapi import APIRouter, Depends, File, HTTPException, UploadFile
 from app.schemas import SessionData, UploadResponse
 from app.services.pdf_extractor import extract_pages, is_scanned_pdf
 from app.services.structure_detector import detect_structure
 from app.storage import save_session
+from app.auth import get_current_user
 
 router = APIRouter()
 
 
 @router.post("/upload", response_model=UploadResponse)
-async def upload_pdf(file: UploadFile = File(...)):
+async def upload_pdf(file: UploadFile = File(...), user_id: str = Depends(get_current_user)):
     if not file.filename or not file.filename.lower().endswith(".pdf"):
         raise HTTPException(status_code=400, detail="Only PDF files are accepted.")
 
