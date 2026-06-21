@@ -152,6 +152,8 @@ export default function App() {
     setProfile(p)
     setScaffolding(p.scaffolding)
     setFromSignup(false)
+    if (signupMode === 'curriculum') setPage(PAGES.CURRICULUM)
+    else if (signupMode === 'quick') setPage(PAGES.QUICK)
   }
 
   function handleSaveSettings(data) {
