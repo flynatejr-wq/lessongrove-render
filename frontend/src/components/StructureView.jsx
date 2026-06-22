@@ -3,9 +3,12 @@ import { useState } from 'react'
 export default function StructureView({
   data, selectable = false, editable = false,
   onSelect, selectedIdx = null, onStructureChange,
+  onGenerate, generateLabel = 'Generate from this chapter',
 }) {
   const { filename, total_pages, structure } = data
   const { detection_method, warnings } = structure
+  // Slim mode: quick-flow chapter picker — show only chapter + pages, no clutter.
+  const slim = selectable && !editable
   const [chapters, setChapters] = useState(structure.chapters)
   const [editingIdx, setEditingIdx] = useState(null)
   const [editTitle, setEditTitle] = useState('')
@@ -76,9 +79,11 @@ export default function StructureView({
           <div className="structure-filename">{filename}</div>
           <div className="structure-filemeta">{total_pages} pages · {chapters.length} chapters</div>
         </div>
-        <span className="structure-method" title={`Detection method: ${detection_method}`}>
-          {detection_method.replace('_', ' ')}
-        </span>
+        {!slim && (
+          <span className="structure-method" title={`Detection method: ${detection_method}`}>
+            {detection_method.replace('_', ' ')}
+          </span>
+        )}
       </div>
 
       {warnings?.length > 0 && (
@@ -149,6 +154,10 @@ export default function StructureView({
 
                   <span className="chapter-pages">pp. {ch.start_page}–{ch.end_page ?? '?'}</span>
 
+                  {slim && isSelected && (
+                    <span className="chapter-selected-badge" aria-hidden="true">✓ Selected</span>
+                  )}
+
                   {editable && !isEditing && (
                     <div className="chapter-edit-actions">
                       {i < chapters.length - 1 && (
@@ -175,14 +184,16 @@ export default function StructureView({
                   )}
                 </div>
 
-                <div className="chapter-bar-wrap">
-                  <div className="chapter-bar-bg" role="presentation">
-                    <div className="chapter-bar-fill" style={{ width: `${barWidth}%` }} />
+                {!slim && (
+                  <div className="chapter-bar-wrap">
+                    <div className="chapter-bar-bg" role="presentation">
+                      <div className="chapter-bar-fill" style={{ width: `${barWidth}%` }} />
+                    </div>
+                    <span className="chapter-page-count">{pageCount} pp</span>
                   </div>
-                  <span className="chapter-page-count">{pageCount} pp</span>
-                </div>
+                )}
 
-                {ch.sections?.length > 0 && (
+                {!slim && ch.sections?.length > 0 && (
                   <div className="section-list">
                     {ch.sections.map((s, j) => (
                       <div key={j} className="section-item">
@@ -201,6 +212,16 @@ export default function StructureView({
                   onClick={() => onSelect(i, ch)}
                 >
                   {isSelected ? '✓ Selected' : 'Use this chapter'}
+                </button>
+              )}
+
+              {/* Slim quick-flow mode: generate right from the selected chapter */}
+              {slim && isSelected && onGenerate && (
+                <button
+                  className="btn-primary chapter-generate-btn"
+                  onClick={() => onGenerate(i, ch)}
+                >
+                  {generateLabel} →
                 </button>
               )}
             </div>

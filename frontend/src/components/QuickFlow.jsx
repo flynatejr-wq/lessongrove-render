@@ -74,28 +74,10 @@ export default function QuickFlow({ onBack, defaultScaffolding = 'standard' }) {
     setEndPage('')
   }
 
-  async function handleGenerate() {
-    setError(null)
+  async function runGeneration(start, end, title) {
     const data = sourceData.data
-    let start = null
-    let end   = null
-
-    if (isPdf) {
-      start = parseInt(startPage, 10)
-      end   = parseInt(endPage, 10)
-      const total = data.total_pages
-      if (!start || !end || start < 1 || end > total || start > end) {
-        setError(`Enter a valid page range between 1 and ${total}.`)
-        return
-      }
-    }
-
     setStep('generating')
     try {
-      const title = isPdf && selectedChapterIdx !== null
-        ? data.structure?.chapters?.[selectedChapterIdx]?.title
-        : data.filename || 'Quick lesson'
-
       const res = await quickLesson(
         data.session_id,
         start, end,
@@ -123,6 +105,36 @@ export default function QuickFlow({ onBack, defaultScaffolding = 'standard' }) {
       setError(err.message)
       setStep('configure')
     }
+  }
+
+  async function handleGenerate() {
+    setError(null)
+    const data = sourceData.data
+    let start = null
+    let end   = null
+
+    if (isPdf) {
+      start = parseInt(startPage, 10)
+      end   = parseInt(endPage, 10)
+      const total = data.total_pages
+      if (!start || !end || start < 1 || end > total || start > end) {
+        setError(`Enter a valid page range between 1 and ${total}.`)
+        return
+      }
+    }
+
+    const title = isPdf && selectedChapterIdx !== null
+      ? data.structure?.chapters?.[selectedChapterIdx]?.title
+      : data.filename || 'Quick lesson'
+
+    runGeneration(start, end, title)
+  }
+
+  // Inline "generate from this chapter" — select + generate in one click.
+  function handleGenerateFromChapter(idx, ch) {
+    handleChapterSelect(idx, ch)
+    setError(null)
+    runGeneration(ch.start_page, ch.end_page ?? ch.start_page, ch.title)
   }
 
   function resetSource() {
@@ -186,6 +198,8 @@ export default function QuickFlow({ onBack, defaultScaffolding = 'standard' }) {
               selectable
               onSelect={handleChapterSelect}
               selectedIdx={selectedChapterIdx}
+              onGenerate={handleGenerateFromChapter}
+              generateLabel={`Generate ${(OUTPUT_TYPES.find(t => t.id === outputType)?.label || 'guide').toLowerCase()} from this chapter`}
             />
             <div className="quick-or">— or enter a custom page range —</div>
             <div className="quick-range">
