@@ -93,9 +93,11 @@ export default function QuickFlow({ onBack, defaultScaffolding = 'standard' }) {
       setResult(res)
       setResultKind(outType)
       setStep('result')
-      // Save to history so it appears in My Lessons
+      // Save to history so it appears in My Lessons. Each quick output gets a UNIQUE
+      // id — multiple outputs from the same source must not overwrite each other.
+      const uniqueId = `${data.session_id}-${Date.now()}-${Math.random().toString(36).slice(2, 7)}`
       saveTermToHistory({
-        id: data.session_id,
+        id: uniqueId,
         filename: title,
         savedAt: new Date().toISOString(),
         weeks: 1,

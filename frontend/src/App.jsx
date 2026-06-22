@@ -19,6 +19,7 @@ import Settings from './components/Settings.jsx'
 import ResetPassword from './components/auth/ResetPassword.jsx'
 import { paceCurriculum, generateLessons, updateStructure, getCostEstimate } from './api.js'
 import { saveTermToHistory, getAllHistory, deleteFromHistory } from './history.js'
+import { detectEntryKind, PROF_KINDS } from './lessonTypes.js'
 
 const SETTINGS_KEY = 'lessongrove_settings'
 const THEME_KEY = 'lessongrove_theme'
@@ -61,18 +62,6 @@ function timeAgo(ts) {
   if (mins < 60) return `${mins} min ago`
   const hrs = Math.floor(mins / 60)
   return `${hrs} hr${hrs > 1 ? 's' : ''} ago`
-}
-// A saved entry can be a lesson plan, an assignment, or a professor output.
-// Infer which from its shape so we can open it in the right view.
-const PROF_KINDS = new Set(['lecture_outline', 'discussion_prompts', 'essay_prompt', 'question_bank'])
-function detectEntryKind(e) {
-  if (!e) return 'lesson'
-  if (e.assignment_type && Array.isArray(e.tasks)) return 'assignment'
-  if (Array.isArray(e.sections)) return 'lecture_outline'
-  if (Array.isArray(e.prompts)) return 'discussion_prompts'
-  if (Array.isArray(e.rubric) || e.word_count_guidance) return 'essay_prompt'
-  if (Array.isArray(e.questions)) return 'question_bank'
-  return 'lesson'
 }
 function userFromSupabase(sbUser) {
   if (!sbUser) return null

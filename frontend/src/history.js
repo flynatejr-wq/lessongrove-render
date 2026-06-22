@@ -1,5 +1,5 @@
 const HISTORY_KEY = 'lessongrove_history'
-const MAX_HISTORY = 20
+const MAX_HISTORY = 100
 
 export function saveTermToHistory({ id, filename, savedAt, weeks, sessionsPerWeek, scaffolding, schedule, lessons }) {
   const entry = { id, filename, savedAt, weeks, sessionsPerWeek, scaffolding, schedule, lessons }
@@ -35,17 +35,20 @@ export function deleteFromHistory(id) {
   return history
 }
 
-export function hasHistory() {
-  return getAllHistory().length > 0
+// Remove a single lesson from a term. If the term has no lessons left, drop it.
+export function deleteLessonFromTerm(termId, sessionNumber) {
+  const history = getAllHistory()
+  const term = history.find(t => t.id === termId)
+  if (!term) return history
+  if (term.lessons) delete term.lessons[sessionNumber]
+  const empty = !term.lessons || Object.keys(term.lessons).length === 0
+  const next = empty
+    ? history.filter(t => t.id !== termId)
+    : history.map(t => (t.id === termId ? term : t))
+  try { localStorage.setItem(HISTORY_KEY, JSON.stringify(next)) } catch {}
+  return next
 }
 
-const PROF_KEY = 'lessongrove_prof_outputs'
-
-export function saveOutputToHistory(output) {
-  try {
-    const list = JSON.parse(localStorage.getItem(PROF_KEY) || '[]')
-    list.unshift({ ...output, _saved_at: new Date().toISOString() })
-    if (list.length > 50) list.splice(50)
-    localStorage.setItem(PROF_KEY, JSON.stringify(list))
-  } catch {}
+export function hasHistory() {
+  return getAllHistory().length > 0
 }

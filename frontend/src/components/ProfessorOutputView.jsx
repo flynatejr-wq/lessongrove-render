@@ -238,24 +238,6 @@ const TYPE_LABELS = {
 }
 
 export default function ProfessorOutputView({ output, outputType, onBack, readOnly = false }) {
-  const [saved, setSaved] = useState(false)
-
-  function handleSave() {
-    try {
-      // Save as a synthetic lesson entry in history for My Lessons
-      const entry = {
-        ...output,
-        _prof_output_type: outputType,
-        generated_at: new Date().toISOString(),
-      }
-      const history = JSON.parse(localStorage.getItem('lessongrove_prof_outputs') || '[]')
-      history.unshift(entry)
-      if (history.length > 100) history.splice(100)
-      localStorage.setItem('lessongrove_prof_outputs', JSON.stringify(history))
-      setSaved(true)
-    } catch {}
-  }
-
   const typeLabel = TYPE_LABELS[outputType] || outputType
 
   return (
@@ -300,13 +282,9 @@ export default function ProfessorOutputView({ output, outputType, onBack, readOn
         {/* Right rail */}
         <aside className="lesson-aside-right" aria-label="Output actions">
           {!readOnly && (
-            <button
-              className={`lesson-action-btn lesson-action-btn--primary${saved ? ' lesson-action-btn--saved' : ''}`}
-              onClick={handleSave}
-              disabled={saved}
-            >
-              {saved ? '✓ Saved' : '💾 Save'}
-            </button>
+            <div className="lesson-action-btn lesson-action-btn--saved" aria-label="Saved to My Lessons">
+              ✓ Saved to My Lessons
+            </div>
           )}
           <button className="lesson-action-btn" onClick={() => window.print()}>
             🖨 Print

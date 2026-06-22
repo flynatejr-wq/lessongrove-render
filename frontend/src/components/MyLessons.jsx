@@ -1,16 +1,15 @@
 import { useState, useMemo } from 'react'
-import { getAllHistory } from '../history.js'
+import { getAllHistory, deleteLessonFromTerm } from '../history.js'
+import { detectEntryKind, entryTypeLabel } from '../lessonTypes.js'
 
-const TYPE_LABELS = {
-  lesson: 'Lesson Plan',
-  worksheet: 'Worksheet',
-  problem_set: 'Problem Set',
-  discussion_prompt: 'Discussion',
-  discussion_prompts: 'Discussion Questions',
-  project_brief: 'Project Brief',
-  lecture_outline: 'Lecture Outline',
-  essay_prompt: 'Essay Question',
-  question_bank: 'Question Bank',
+const KIND_ORDER = ['lesson', 'assignment', 'lecture_outline', 'discussion_prompts', 'essay_prompt', 'question_bank']
+const KIND_FILTER_LABELS = {
+  lesson: 'Lessons',
+  assignment: 'Assignments',
+  lecture_outline: 'Lecture Outlines',
+  discussion_prompts: 'Discussion Qs',
+  essay_prompt: 'Essay Qs',
+  question_bank: 'Question Banks',
 }
 
 function formatDate(iso) {
@@ -19,38 +18,66 @@ function formatDate(iso) {
   return d.toLocaleDateString(undefined, { month: 'short', day: 'numeric', year: 'numeric' })
 }
 
-function LessonCard({ lesson, termName, onView }) {
-  const type = lesson.assignment_type || (lesson.activities ? 'lesson' : 'lesson')
+function previewText(l) {
+  return l.learning_objectives?.[0]?.text
+    || (typeof l.learning_objectives?.[0] === 'string' ? l.learning_objectives[0] : null)
+    || l.overview
+    || l.prompt
+    || ''
+}
+
+function LessonCard({ lesson, termName, onView, onDelete }) {
+  const [confirming, setConfirming] = useState(false)
+  const label = entryTypeLabel(lesson)
+  const preview = previewText(lesson)
+
   return (
-    <button className="my-lessons-card" onClick={() => onView(lesson)}>
-      <div className="my-lessons-card-top">
-        <span className="my-lessons-type-tag">{TYPE_LABELS[type] || 'Lesson Plan'}</span>
-        <span className="my-lessons-date">{formatDate(lesson.generated_at)}</span>
-      </div>
-      <h3 className="my-lessons-card-title">{lesson.title || `Session ${lesson.session_number}`}</h3>
-      {termName && <p className="my-lessons-term">{termName}</p>}
-      {lesson.objectives?.length > 0 && (
-        <p className="my-lessons-preview">{lesson.objectives[0].text || lesson.objectives[0]}</p>
+    <div className="my-lessons-card-wrap">
+      <button className="my-lessons-card" onClick={() => onView(lesson)}>
+        <div className="my-lessons-card-top">
+          <span className="my-lessons-type-tag">{label}</span>
+          <span className="my-lessons-date">{formatDate(lesson.generated_at)}</span>
+        </div>
+        <h3 className="my-lessons-card-title">{lesson.title || `Session ${lesson.session_number}`}</h3>
+        {termName && <p className="my-lessons-term">{termName}</p>}
+        {preview && <p className="my-lessons-preview">{preview}</p>}
+      </button>
+
+      {confirming ? (
+        <div className="my-lessons-card-confirm" role="group" aria-label="Confirm delete">
+          <button className="my-lessons-card-confirm-yes" onClick={() => onDelete(lesson)}>Delete</button>
+          <button className="my-lessons-card-confirm-no" onClick={() => setConfirming(false)}>Cancel</button>
+        </div>
+      ) : (
+        <button
+          className="my-lessons-card-delete"
+          onClick={() => setConfirming(true)}
+          aria-label={`Delete ${lesson.title || 'this lesson'}`}
+        >×</button>
       )}
-    </button>
+    </div>
   )
 }
 
 export default function MyLessons({ onViewLesson, onBack, onCreate }) {
   const [query, setQuery] = useState('')
   const [filterType, setFilterType] = useState('all')
-
-  const allTerms = useMemo(() => getAllHistory(), [])
+  const [terms, setTerms] = useState(() => getAllHistory())
 
   const allLessons = useMemo(() => {
     const result = []
-    for (const term of allTerms) {
+    for (const term of terms) {
       for (const lesson of Object.values(term.lessons || {})) {
         result.push({ ...lesson, _termName: term.filename || 'Untitled course', _termId: term.id })
       }
     }
     return result.sort((a, b) => new Date(b.generated_at || 0) - new Date(a.generated_at || 0))
-  }, [allTerms])
+  }, [terms])
+
+  const presentKinds = useMemo(() => {
+    const set = new Set(allLessons.map(detectEntryKind))
+    return KIND_ORDER.filter(k => set.has(k))
+  }, [allLessons])
 
   const filtered = useMemo(() => {
     const q = query.toLowerCase()
@@ -58,18 +85,23 @@ export default function MyLessons({ onViewLesson, onBack, onCreate }) {
       const matchesQuery = !q
         || (l.title || '').toLowerCase().includes(q)
         || (l._termName || '').toLowerCase().includes(q)
-        || (l.objectives || []).some(o => (o.text || o).toLowerCase().includes(q))
-      const matchesType = filterType === 'all' || (l.assignment_type || 'lesson') === filterType
+        || previewText(l).toLowerCase().includes(q)
+      const matchesType = filterType === 'all' || detectEntryKind(l) === filterType
       return matchesQuery && matchesType
     })
   }, [allLessons, query, filterType])
+
+  function handleDelete(lesson) {
+    const next = deleteLessonFromTerm(lesson._termId, lesson.session_number)
+    setTerms(next)
+  }
 
   return (
     <div className="my-lessons-page">
       <div className="my-lessons-header">
         <div>
           <h1 className="my-lessons-title">My Lessons</h1>
-          <p className="my-lessons-sub">{allLessons.length} lesson{allLessons.length !== 1 ? 's' : ''} saved</p>
+          <p className="my-lessons-sub">{allLessons.length} item{allLessons.length !== 1 ? 's' : ''} saved</p>
         </div>
       </div>
 
@@ -82,24 +114,26 @@ export default function MyLessons({ onViewLesson, onBack, onCreate }) {
           <input
             className="my-lessons-search"
             type="search"
-            placeholder="Search by title, source, or objective…"
+            placeholder="Search by title, source, or content…"
             value={query}
             onChange={e => setQuery(e.target.value)}
             aria-label="Search lessons"
           />
         </div>
 
-        <div className="my-lessons-filters">
-          {['all', 'lesson', 'worksheet', 'problem_set', 'discussion_prompt', 'project_brief'].map(t => (
-            <button
-              key={t}
-              className={`my-lessons-filter-btn${filterType === t ? ' my-lessons-filter-btn--active' : ''}`}
-              onClick={() => setFilterType(t)}
-            >
-              {t === 'all' ? 'All' : TYPE_LABELS[t]}
-            </button>
-          ))}
-        </div>
+        {presentKinds.length > 1 && (
+          <div className="my-lessons-filters">
+            {['all', ...presentKinds].map(t => (
+              <button
+                key={t}
+                className={`my-lessons-filter-btn${filterType === t ? ' my-lessons-filter-btn--active' : ''}`}
+                onClick={() => setFilterType(t)}
+              >
+                {t === 'all' ? 'All' : KIND_FILTER_LABELS[t]}
+              </button>
+            ))}
+          </div>
+        )}
       </div>
 
       {filtered.length === 0 ? (
@@ -128,6 +162,7 @@ export default function MyLessons({ onViewLesson, onBack, onCreate }) {
               lesson={l}
               termName={l._termName}
               onView={onViewLesson}
+              onDelete={handleDelete}
             />
           ))}
         </div>
