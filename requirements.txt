@@ -13,3 +13,4 @@ youtube-transcript-api==1.2.4
 trafilatura==2.0.0
 slowapi==0.1.9
 PyJWT==2.9.0
+cryptography>=42.0.0
