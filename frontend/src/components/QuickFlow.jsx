@@ -4,6 +4,7 @@ import StructureView from './StructureView.jsx'
 import LessonView from './LessonView.jsx'
 import AssignmentView from './AssignmentView.jsx'
 import ProfessorOutputView from './ProfessorOutputView.jsx'
+import CompanionBar from './CompanionBar.jsx'
 import GeneratingLoader from './GeneratingLoader.jsx'
 import { quickLesson } from '../api.js'
 import { saveTermToHistory } from '../history.js'
@@ -52,6 +53,7 @@ export default function QuickFlow({ onBack, defaultScaffolding = 'standard' }) {
 
   const [result, setResult] = useState(null)
   const [resultKind, setResultKind] = useState(null)   // 'lesson' | 'assignment'
+  const [lastGen, setLastGen] = useState(null)         // { start, end, title } of last generation
   const [error, setError]   = useState(null)
 
   const isPdf = sourceData?.sourceType === 'pdf'
@@ -74,8 +76,9 @@ export default function QuickFlow({ onBack, defaultScaffolding = 'standard' }) {
     setEndPage('')
   }
 
-  async function runGeneration(start, end, title) {
+  async function runGeneration(start, end, title, outType = outputType, assignType = assignmentType) {
     const data = sourceData.data
+    setLastGen({ start, end, title })
     setStep('generating')
     try {
       const res = await quickLesson(
@@ -84,11 +87,11 @@ export default function QuickFlow({ onBack, defaultScaffolding = 'standard' }) {
         title,
         scaffolding,
         null,
-        outputType,
-        assignmentType,
+        outType,
+        assignType,
       )
       setResult(res)
-      setResultKind(outputType)
+      setResultKind(outType)
       setStep('result')
       // Save to history so it appears in My Lessons
       saveTermToHistory({
@@ -137,6 +140,14 @@ export default function QuickFlow({ onBack, defaultScaffolding = 'standard' }) {
     runGeneration(ch.start_page, ch.end_page ?? ch.start_page, ch.title)
   }
 
+  // Companion: generate a different output type from the same chapter.
+  function handleCompanion(newType) {
+    if (!lastGen) return
+    setOutputType(newType)        // keeps loader + inline button label in sync
+    setError(null)
+    runGeneration(lastGen.start, lastGen.end, lastGen.title, newType)
+  }
+
   function resetSource() {
     setSourceData(null); setStep('source')
     setSelectedChapterIdx(null); setStartPage(''); setEndPage('')
@@ -145,13 +156,23 @@ export default function QuickFlow({ onBack, defaultScaffolding = 'standard' }) {
 
   // ── Result screens ────────────────────────────────────────────────────────
   if (step === 'result' && result) {
-    if (PROFESSOR_OUTPUT_TYPES.has(resultKind)) {
-      return <ProfessorOutputView output={result} outputType={resultKind} onBack={() => setStep('configure')} />
-    }
-    if (resultKind === 'assignment') {
-      return <AssignmentView assignment={result} isQuick onBack={() => setStep('configure')} />
-    }
-    return <LessonView lesson={result} isQuick onBack={() => setStep('configure')} />
+    const view = PROFESSOR_OUTPUT_TYPES.has(resultKind)
+      ? <ProfessorOutputView output={result} outputType={resultKind} onBack={() => setStep('configure')} />
+      : resultKind === 'assignment'
+        ? <AssignmentView assignment={result} isQuick onBack={() => setStep('configure')} />
+        : <LessonView lesson={result} isQuick onBack={() => setStep('configure')} />
+
+    return (
+      <div className="quick-result">
+        <CompanionBar
+          outputTypes={OUTPUT_TYPES}
+          currentType={resultKind}
+          sourceTitle={lastGen?.title || 'this chapter'}
+          onSelect={handleCompanion}
+        />
+        {view}
+      </div>
+    )
   }
 
   // ── Source picker ─────────────────────────────────────────────────────────
