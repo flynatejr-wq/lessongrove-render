@@ -206,14 +206,61 @@ export default function QuickFlow({ onBack, defaultScaffolding = 'standard' }) {
       <div className="step-header">
         <p className="step-kicker">Quick lesson · Step 2 of 2</p>
         <h1 className="step-title">Set your options</h1>
-        {isPdf && <p className="step-sub">Select a chapter below, or enter a custom page range.</p>}
+        <p className="step-sub">
+          {isPdf
+            ? 'Choose what to create, then pick a chapter or page range.'
+            : 'Choose what to create and your support level.'}
+        </p>
       </div>
 
       <div className="quick-configure">
 
-        {/* PDF: chapter/page picker */}
+        {/* 1. What do you need? — decide the output first */}
+        <div className="quick-options">
+          <div className="quick-option-group">
+            <span className="section-label">What do you need?</span>
+            <div className="output-type-grid" role="group" aria-label="Output type">
+              {OUTPUT_TYPES.map(t => (
+                <button
+                  key={t.id}
+                  type="button"
+                  className={`output-type-card${outputType === t.id ? ' output-type-card--active' : ''}`}
+                  onClick={() => setOutputType(t.id)}
+                  aria-pressed={outputType === t.id}
+                >
+                  <span className="output-type-card-label">{t.label}</span>
+                  <span className="output-type-card-desc">{t.desc}</span>
+                </button>
+              ))}
+            </div>
+          </div>
+
+          {/* Assignment type (only when assignment selected) */}
+          {outputType === 'assignment' && (
+            <div className="quick-option-group">
+              <span className="section-label">Assignment type</span>
+              <div className="assignment-type-grid">
+                {ASSIGNMENT_TYPES.map(t => (
+                  <button
+                    key={t.id}
+                    type="button"
+                    className={`assignment-type-card${assignmentType === t.id ? ' assignment-type-card--active' : ''}`}
+                    onClick={() => setAssignmentType(t.id)}
+                    aria-pressed={assignmentType === t.id}
+                  >
+                    <span className="assignment-type-label">{t.label}</span>
+                    <span className="assignment-type-desc">{t.desc}</span>
+                  </button>
+                ))}
+              </div>
+            </div>
+          )}
+        </div>
+
+        {/* 2. Which part? — PDF chapter/page picker */}
         {isPdf && data?.structure && (
           <>
+            <span className="section-label">Which chapter?</span>
             <StructureView
               data={data}
               selectable
@@ -259,48 +306,8 @@ export default function QuickFlow({ onBack, defaultScaffolding = 'standard' }) {
           </div>
         )}
 
-        {/* Output type: profile-aware */}
+        {/* 3. Support level */}
         <div className="quick-options">
-          <div className="quick-option-group">
-            <span className="section-label">What do you need?</span>
-            <div className="output-type-grid" role="group" aria-label="Output type">
-              {OUTPUT_TYPES.map(t => (
-                <button
-                  key={t.id}
-                  type="button"
-                  className={`output-type-card${outputType === t.id ? ' output-type-card--active' : ''}`}
-                  onClick={() => setOutputType(t.id)}
-                  aria-pressed={outputType === t.id}
-                >
-                  <span className="output-type-card-label">{t.label}</span>
-                  <span className="output-type-card-desc">{t.desc}</span>
-                </button>
-              ))}
-            </div>
-          </div>
-
-          {/* Assignment type (only when assignment selected) */}
-          {outputType === 'assignment' && (
-            <div className="quick-option-group">
-              <span className="section-label">Assignment type</span>
-              <div className="assignment-type-grid">
-                {ASSIGNMENT_TYPES.map(t => (
-                  <button
-                    key={t.id}
-                    type="button"
-                    className={`assignment-type-card${assignmentType === t.id ? ' assignment-type-card--active' : ''}`}
-                    onClick={() => setAssignmentType(t.id)}
-                    aria-pressed={assignmentType === t.id}
-                  >
-                    <span className="assignment-type-label">{t.label}</span>
-                    <span className="assignment-type-desc">{t.desc}</span>
-                  </button>
-                ))}
-              </div>
-            </div>
-          )}
-
-          {/* Scaffolding */}
           <div className="quick-option-group">
             <span className="section-label">Support level</span>
             <div className="scaffold-dial" role="group" aria-label="Scaffolding level">

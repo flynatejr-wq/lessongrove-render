@@ -392,7 +392,7 @@ export default function App() {
 
   const navLinks = [
     { id: PAGES.QUICK,      label: 'Quick Lesson' },
-    { id: PAGES.CURRICULUM, label: 'My Curriculum' },
+    { id: PAGES.CURRICULUM, label: 'Full Curriculum' },
     { id: PAGES.MY_LESSONS, label: 'My Lessons' },
     { id: PAGES.SETTINGS,   label: 'Settings' },
   ]
