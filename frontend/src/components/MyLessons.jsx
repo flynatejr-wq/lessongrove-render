@@ -36,7 +36,7 @@ function LessonCard({ lesson, termName, onView }) {
   )
 }
 
-export default function MyLessons({ onViewLesson, onBack }) {
+export default function MyLessons({ onViewLesson, onBack, onCreate }) {
   const [query, setQuery] = useState('')
   const [filterType, setFilterType] = useState('all')
 
@@ -108,6 +108,11 @@ export default function MyLessons({ onViewLesson, onBack }) {
             ? <>
                 <p className="my-lessons-empty-title">No lessons yet</p>
                 <p className="my-lessons-empty-sub">Generate a Quick Lesson or a full curriculum to see it here.</p>
+                {onCreate && (
+                  <button className="btn-primary" style={{ marginTop: 16 }} onClick={onCreate}>
+                    Create your first lesson →
+                  </button>
+                )}
               </>
             : <>
                 <p className="my-lessons-empty-title">No results for "{query}"</p>

@@ -498,6 +498,7 @@ export default function App() {
           <MyLessons
             onViewLesson={lesson => { setActiveLesson(lesson); setPage(PAGES.MY_LESSONS) }}
             onBack={() => navigate(PAGES.HOME)}
+            onCreate={() => navigate(PAGES.QUICK)}
           />
         )}
 
