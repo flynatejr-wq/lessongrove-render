@@ -34,6 +34,32 @@ function loadProfile() {
 function saveProfile(p) {
   try { localStorage.setItem(PROFILE_KEY, JSON.stringify(p)) } catch {}
 }
+
+// Curriculum draft: auto-saved mid-build so an accidental nav/refresh doesn't lose
+// progress. The backend purges uploaded sessions at 4h, so drafts expire just under that.
+const DRAFT_KEY = 'lessongrove_curriculum_draft'
+const DRAFT_TTL_MS = 3.5 * 60 * 60 * 1000
+function loadDraft() {
+  try {
+    const d = JSON.parse(localStorage.getItem(DRAFT_KEY))
+    if (!d || !d.savedAt) return null
+    if (Date.now() - d.savedAt > DRAFT_TTL_MS) { localStorage.removeItem(DRAFT_KEY); return null }
+    return d
+  } catch { return null }
+}
+function saveDraft(d) {
+  try { localStorage.setItem(DRAFT_KEY, JSON.stringify({ ...d, savedAt: Date.now() })) } catch {}
+}
+function clearDraft() {
+  try { localStorage.removeItem(DRAFT_KEY) } catch {}
+}
+function timeAgo(ts) {
+  const mins = Math.round((Date.now() - ts) / 60000)
+  if (mins < 1) return 'just now'
+  if (mins < 60) return `${mins} min ago`
+  const hrs = Math.floor(mins / 60)
+  return `${hrs} hr${hrs > 1 ? 's' : ''} ago`
+}
 function userFromSupabase(sbUser) {
   if (!sbUser) return null
   return { id: sbUser.id, email: sbUser.email, name: sbUser.user_metadata?.name || sbUser.email.split('@')[0] }
@@ -155,6 +181,7 @@ export default function App() {
   const [error, setError] = useState(null)
   const [costEstimate, setCostEstimate] = useState(null)
   const [structureSaving, setStructureSaving] = useState(false)
+  const [draft, setDraft] = useState(loadDraft)  // resumable curriculum draft
 
   const saved = loadSettings()
   const [scaffolding, setScaffolding] = useState(saved.scaffolding || 'standard')
@@ -167,6 +194,13 @@ export default function App() {
   useEffect(() => {
     saveSettings({ scaffolding })
   }, [scaffolding])
+
+  // Auto-save the curriculum draft at the pre-generation steps.
+  useEffect(() => {
+    if (uploadData && (fullStep === 'structure' || fullStep === 'schedule')) {
+      saveDraft({ fullStep, uploadData, scheduleData, scaffolding })
+    }
+  }, [fullStep, uploadData, scheduleData, scaffolding])
 
   function toggleTheme() { setTheme(t => t === 'dark' ? 'light' : 'dark') }
 
@@ -200,13 +234,32 @@ export default function App() {
     if (p !== PAGES.CURRICULUM) {
       setFullStep('upload'); setUploadData(null); setScheduleData(null)
       setLessons({}); setActiveLesson(null); setError(null); setCostEstimate(null)
+    } else {
+      setDraft(loadDraft())  // re-check for a resumable draft each visit
     }
+  }
+
+  function handleResumeDraft() {
+    if (!draft) return
+    setUploadData(draft.uploadData)
+    setScheduleData(draft.scheduleData || null)
+    setScaffolding(draft.scaffolding || 'standard')
+    setLessons({}); setError(null); setCostEstimate(null)
+    setFullStep(draft.fullStep || 'structure')
+    setDraft(null)
+    setPage(PAGES.CURRICULUM)
+  }
+
+  function handleDiscardDraft() {
+    clearDraft()
+    setDraft(null)
   }
 
   function resetCurriculum() {
     setFullStep('upload'); setUploadData(null); setScheduleData(null)
     setLessons({}); setIsGenerating(false); setGenProgress(null)
     setActiveLesson(null); setError(null); setCostEstimate(null)
+    clearDraft(); setDraft(null)
   }
 
   // Full curriculum handlers
@@ -283,6 +336,8 @@ export default function App() {
           sessionsPerWeek: scheduleData.schedule.sessions_per_week,
           scaffolding, schedule: scheduleData.schedule, lessons: allLessons,
         })
+        // Work is now saved in history — the draft is no longer needed.
+        clearDraft(); setDraft(null)
       }
     }
   }
@@ -516,6 +571,23 @@ export default function App() {
 
         {page === PAGES.CURRICULUM && fullStep === 'upload' && (
           <div className="upload-step">
+            {draft && (
+              <div className="resume-banner" role="note">
+                <div className="resume-banner-info">
+                  <span className="resume-banner-icon" aria-hidden="true">↻</span>
+                  <div>
+                    <p className="resume-banner-title">Resume your unfinished curriculum?</p>
+                    <p className="resume-banner-sub">
+                      {draft.uploadData?.filename || 'Your textbook'} · saved {timeAgo(draft.savedAt)}
+                    </p>
+                  </div>
+                </div>
+                <div className="resume-banner-actions">
+                  <button className="btn-primary" onClick={handleResumeDraft}>Resume</button>
+                  <button className="btn-ghost" onClick={handleDiscardDraft}>Discard</button>
+                </div>
+              </div>
+            )}
             <div className="step-header">
               <p className="step-kicker">Step 1 of 3</p>
               <h1 className="step-title">Upload your textbook</h1>
