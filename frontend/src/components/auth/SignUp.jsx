@@ -61,6 +61,7 @@ export default function SignUp({ onComplete, onLogin, signupMode }) {
   const [googleLoading, setGoogleLoading] = useState(false)
   const [success, setSuccess] = useState(false)
   const [formErr, setFormErr] = useState(null)
+  const [emailSent, setEmailSent] = useState(false)
 
   const strength = getStrength(fields.password)
   const showConfirmField = strength >= 2 && fields.password.length > 0
@@ -83,6 +84,13 @@ export default function SignUp({ onComplete, onLogin, signupMode }) {
       options: { data: { name: fields.name.trim() } },
     })
     if (error) { setFormErr(error.message); setSubmitting(false); return }
+    // If email confirmation is enabled, Supabase returns a user but no session.
+    // Don't push into onboarding — ask them to confirm their email first.
+    if (data.user && !data.session) {
+      setSubmitting(false)
+      setEmailSent(true)
+      return
+    }
     const user = { id: data.user?.id, name: fields.name.trim(), email: fields.email.trim() }
     setSuccess(true)
     setTimeout(() => onComplete(user, signupMode), 700)
@@ -93,6 +101,32 @@ export default function SignUp({ onComplete, onLogin, signupMode }) {
     setFormErr(null)
     setGoogleLoading(true)
     await supabase.auth.signInWithOAuth({ provider: 'google' })
+  }
+
+  if (emailSent) {
+    return (
+      <div className="auth-page">
+        <div className="auth-card auth-card--success">
+          <div className="auth-card-header">
+            <LogoMark />
+            <h1 className="auth-heading">Check your email</h1>
+            <p className="auth-subheading">
+              We sent a confirmation link to <strong>{fields.email.trim()}</strong>. Click it to
+              activate your account, then come back and log in.
+            </p>
+          </div>
+          <button className="btn-primary auth-submit" type="button" onClick={onLogin}>
+            Go to log in →
+          </button>
+          <p className="auth-footer-note">
+            Didn't get it? Check your spam folder, or{' '}
+            <button className="landing-text-link" type="button" onClick={() => setEmailSent(false)}>
+              try again
+            </button>.
+          </p>
+        </div>
+      </div>
+    )
   }
 
   return (

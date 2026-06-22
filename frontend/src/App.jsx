@@ -75,6 +75,7 @@ export default function App() {
   const [signupMode, setSignupMode] = useState('quick')
   const [fromSignup, setFromSignup] = useState(false)
   const [resetMode, setResetMode] = useState(false)
+  const [authError, setAuthError] = useState(null)
   const [page, setPage] = useState(PAGES.HOME)
   const [menuOpen, setMenuOpen] = useState(false)
   const [pageKey, setPageKey] = useState(0)
@@ -93,6 +94,17 @@ export default function App() {
   }
 
   useEffect(() => {
+    // Catch expired/invalid confirmation or reset links: Supabase redirects
+    // back with #error=...&error_description=... in the URL hash.
+    const hash = window.location.hash
+    if (hash.includes('error')) {
+      const params = new URLSearchParams(hash.replace(/^#/, ''))
+      const desc = params.get('error_description')
+      if (desc) {
+        setAuthError(desc.replace(/\+/g, ' '))
+        window.history.replaceState(null, '', window.location.pathname)
+      }
+    }
     supabase.auth.getSession().then(({ data: { session } }) => {
       setUser(userFromSupabase(session?.user ?? null))
       setAuthReady(true)
@@ -320,6 +332,12 @@ export default function App() {
   if (!user) {
     return (
       <div className="app" data-theme={theme}>
+        {authError && (
+          <div className="auth-error-toast" role="alert">
+            <span>{authError}</span>
+            <button className="auth-error-close" onClick={() => setAuthError(null)} aria-label="Dismiss">×</button>
+          </div>
+        )}
         {authScreen === 'landing' && (
           <LandingPage
             onSignup={handleSignupRequest}
