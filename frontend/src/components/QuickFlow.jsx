@@ -11,7 +11,7 @@ import { saveTermToHistory } from '../history.js'
 const ASSIGNMENT_TYPES = [
   { id: 'worksheet',         label: 'Worksheet',          desc: 'Structured questions guiding students through the content' },
   { id: 'problem_set',       label: 'Problem set',        desc: 'Practice problems requiring application of concepts' },
-  { id: 'discussion_prompt', label: 'Discussion prompts', desc: 'Open-ended prompts for class or small-group discussion' },
+  { id: 'discussion_prompt', label: 'Discussion questions', desc: 'Open-ended questions for class or small-group discussion' },
   { id: 'project_brief',     label: 'Project brief',      desc: 'Multi-step challenge with a real deliverable' },
 ]
 
@@ -23,8 +23,8 @@ const K12_OUTPUT_TYPES = [
 const PROF_OUTPUT_TYPES = [
   { id: 'lesson',             label: 'Lesson Plan',         desc: 'Objectives, activities, assessment, and homework' },
   { id: 'lecture_outline',    label: 'Lecture Outline',     desc: 'Structured outline with talking points for your lecture' },
-  { id: 'discussion_prompts', label: 'Discussion Prompts',  desc: 'Seminar-style questions grounded in your source material' },
-  { id: 'essay_prompt',       label: 'Essay Prompt + Rubric', desc: 'Essay question tied to source material with a grading rubric' },
+  { id: 'discussion_prompts', label: 'Discussion Questions',  desc: 'Seminar-style questions grounded in your source material' },
+  { id: 'essay_prompt',       label: 'Essay Question + Rubric', desc: 'Essay question tied to source material with a grading rubric' },
   { id: 'question_bank',      label: 'Question Bank',       desc: 'MC, short answer, and essay questions with answer keys' },
   { id: 'assignment',         label: 'Assignment',          desc: 'Student-facing worksheet, problem set, or project' },
 ]

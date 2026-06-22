@@ -6,9 +6,10 @@ const TYPE_LABELS = {
   worksheet: 'Worksheet',
   problem_set: 'Problem Set',
   discussion_prompt: 'Discussion',
+  discussion_prompts: 'Discussion Questions',
   project_brief: 'Project Brief',
   lecture_outline: 'Lecture Outline',
-  essay_prompt: 'Essay Prompt',
+  essay_prompt: 'Essay Question',
   question_bank: 'Question Bank',
 }
 

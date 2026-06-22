@@ -3,7 +3,7 @@ import { useState } from 'react'
 const TYPE_LABELS = {
   worksheet: 'Worksheet',
   problem_set: 'Problem Set',
-  discussion_prompt: 'Discussion Prompts',
+  discussion_prompt: 'Discussion Questions',
   project_brief: 'Project Brief',
 }
 
@@ -113,7 +113,7 @@ export default function AssignmentView({ assignment, onBack, isQuick = false }) 
 
             <section className="lesson-section" aria-labelledby="tasks-heading">
               <h2 className="lesson-section-heading" id="tasks-heading">
-                {typeLabel === 'Discussion Prompts' ? 'Prompts' :
+                {typeLabel === 'Discussion Questions' ? 'Questions' :
                  typeLabel === 'Project Brief' ? 'Tasks & Milestones' : 'Tasks'}
               </h2>
               <ol className="assignment-task-list">

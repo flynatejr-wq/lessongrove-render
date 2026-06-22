@@ -32,7 +32,7 @@ const MESSAGE_SETS = {
   discussion_prompts: [
     'Reading your source material…',
     'Finding key ideas to discuss…',
-    'Writing seminar prompts…',
+    'Writing discussion questions…',
     'Adding follow-up questions…',
     'Grounding in your text…',
     'Almost done…',

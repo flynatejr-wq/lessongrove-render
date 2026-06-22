@@ -56,7 +56,7 @@ function buildMarkdown(output, outputType) {
   } else if (outputType === 'discussion_prompts') {
     lines.push('## Overview', output.overview, '')
     for (const [i, p] of (output.prompts || []).entries()) {
-      lines.push(`## Discussion Prompt ${i + 1}`, p.prompt, '')
+      lines.push(`## Discussion Question ${i + 1}`, p.prompt, '')
       if (p.follow_ups?.length) {
         lines.push('**Follow-ups:**')
         for (const f of p.follow_ups) lines.push(`- ${f}`)
@@ -64,7 +64,7 @@ function buildMarkdown(output, outputType) {
       }
     }
   } else if (outputType === 'essay_prompt') {
-    lines.push('## Essay Prompt', output.prompt, '', `**Word count:** ${output.word_count_guidance}`, '', '## Context', output.context, '', '## Rubric')
+    lines.push('## Essay Question', output.prompt, '', `**Word count:** ${output.word_count_guidance}`, '', '## Context', output.context, '', '## Rubric')
     for (const c of output.rubric || []) {
       lines.push(`### ${c.criterion} (${c.weight})`, `**Excellent:** ${c.excellent}`, `**Satisfactory:** ${c.satisfactory}`, `**Needs improvement:** ${c.needs_improvement}`, '')
     }
@@ -119,7 +119,7 @@ function DiscussionPromptsBody({ output }) {
         </section>
       )}
       <section className="lesson-section">
-        <h2 className="lesson-section-heading">Discussion Prompts</h2>
+        <h2 className="lesson-section-heading">Discussion Questions</h2>
         <div className="prof-prompts">
           {(output.prompts || []).map((p, i) => (
             <div key={i} className="prof-prompt-card">
@@ -149,7 +149,7 @@ function EssayPromptBody({ output }) {
   return (
     <>
       <section className="lesson-section">
-        <h2 className="lesson-section-heading">Essay Prompt</h2>
+        <h2 className="lesson-section-heading">Essay Question</h2>
         {output.context && <p className="prof-essay-context">{output.context}</p>}
         <p className="prof-essay-prompt">{output.prompt}</p>
         {output.word_count_guidance && (
@@ -232,8 +232,8 @@ function QuestionBankBody({ output }) {
 // ── Main component ────────────────────────────────────────────────────────────
 const TYPE_LABELS = {
   lecture_outline: 'Lecture Outline',
-  discussion_prompts: 'Discussion Prompts',
-  essay_prompt: 'Essay Prompt & Rubric',
+  discussion_prompts: 'Discussion Questions',
+  essay_prompt: 'Essay Question & Rubric',
   question_bank: 'Question Bank',
 }
 
