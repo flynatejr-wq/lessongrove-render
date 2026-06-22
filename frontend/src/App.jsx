@@ -12,6 +12,8 @@ import StructureView from './components/StructureView.jsx'
 import CourseForm from './components/CourseForm.jsx'
 import ScheduleGrid from './components/ScheduleGrid.jsx'
 import LessonView from './components/LessonView.jsx'
+import AssignmentView from './components/AssignmentView.jsx'
+import ProfessorOutputView from './components/ProfessorOutputView.jsx'
 import MyLessons from './components/MyLessons.jsx'
 import Settings from './components/Settings.jsx'
 import ResetPassword from './components/auth/ResetPassword.jsx'
@@ -59,6 +61,18 @@ function timeAgo(ts) {
   if (mins < 60) return `${mins} min ago`
   const hrs = Math.floor(mins / 60)
   return `${hrs} hr${hrs > 1 ? 's' : ''} ago`
+}
+// A saved entry can be a lesson plan, an assignment, or a professor output.
+// Infer which from its shape so we can open it in the right view.
+const PROF_KINDS = new Set(['lecture_outline', 'discussion_prompts', 'essay_prompt', 'question_bank'])
+function detectEntryKind(e) {
+  if (!e) return 'lesson'
+  if (e.assignment_type && Array.isArray(e.tasks)) return 'assignment'
+  if (Array.isArray(e.sections)) return 'lecture_outline'
+  if (Array.isArray(e.prompts)) return 'discussion_prompts'
+  if (Array.isArray(e.rubric) || e.word_count_guidance) return 'essay_prompt'
+  if (Array.isArray(e.questions)) return 'question_bank'
+  return 'lesson'
 }
 function userFromSupabase(sbUser) {
   if (!sbUser) return null
@@ -550,11 +564,19 @@ export default function App() {
         )}
 
         {page === PAGES.MY_LESSONS && (
-          <MyLessons
-            onViewLesson={lesson => { setActiveLesson(lesson); setPage(PAGES.MY_LESSONS) }}
-            onBack={() => navigate(PAGES.HOME)}
-            onCreate={() => navigate(PAGES.QUICK)}
-          />
+          activeLesson ? (() => {
+            const kind = detectEntryKind(activeLesson)
+            const back = () => setActiveLesson(null)
+            if (kind === 'assignment') return <AssignmentView assignment={activeLesson} isQuick onBack={back} />
+            if (PROF_KINDS.has(kind)) return <ProfessorOutputView output={activeLesson} outputType={kind} onBack={back} />
+            return <LessonView lesson={activeLesson} isQuick onBack={back} />
+          })() : (
+            <MyLessons
+              onViewLesson={setActiveLesson}
+              onBack={() => navigate(PAGES.HOME)}
+              onCreate={() => navigate(PAGES.QUICK)}
+            />
+          )
         )}
 
         {page === PAGES.SETTINGS && (
