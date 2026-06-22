@@ -105,6 +105,13 @@ export default function AssignmentView({ assignment, onBack, isQuick = false }) 
 
         {/* Center content */}
         <main className="lesson-content">
+          {/* Print-only worksheet header for student handouts */}
+          <div className="worksheet-print-header print-only" aria-hidden="true">
+            <span>Name: ______________________________</span>
+            <span>Date: ____________</span>
+            <span>Class: ____________</span>
+          </div>
+
           <h1 className="lesson-title">{assignment.title}</h1>
           <p className="lesson-page-range">{typeLabel} · {assignment.source_ref}</p>
 
@@ -133,6 +140,9 @@ export default function AssignmentView({ assignment, onBack, isQuick = false }) 
                         <span className="task-answer-label">Answer</span>
                         <span className="task-answer-text">{task.answer}</span>
                       </div>
+                    )}
+                    {!showAnswers && (
+                      <div className="worksheet-answer-space print-only" aria-hidden="true" />
                     )}
                   </li>
                 ))}

@@ -1050,6 +1050,9 @@ body {
 }
 .task-answer-text { font-size: 13px; color: var(--tx-1); line-height: 1.55; }
 
+/* Elements that only appear when printing (worksheet handout bits) */
+.print-only { display: none; }
+
 /* Answer-key toggle in the active (on) state */
 .lesson-action-btn--keyon {
   background: color-mix(in srgb, var(--ember) 12%, var(--card));
@@ -1553,6 +1556,26 @@ body {
   .lesson-session-badge { border: 0.5pt solid #ccc !important; background: none !important; color: #666 !important; }
   .question-type { border: 0.5pt solid #ccc !important; background: none !important; color: #666 !important; }
   .activity-duration { background: none !important; border: 0.5pt solid #ccc !important; }
+
+  /* Worksheet handout: name/date header + writing space for students */
+  .print-only { display: block !important; }
+  .worksheet-print-header {
+    display: flex !important; flex-wrap: wrap; gap: 16pt;
+    font-size: 10pt !important; color: #111 !important;
+    margin-bottom: 14pt !important; padding-bottom: 8pt !important;
+    border-bottom: 0.5pt solid #ccc !important;
+  }
+  .assignment-task-item { page-break-inside: avoid; }
+  .assignment-task-prompt { font-size: 11pt !important; }
+  .worksheet-answer-space {
+    height: 84px;
+    margin-top: 6pt;
+    background-image: repeating-linear-gradient(
+      transparent, transparent 23px, #bbb 23px, #bbb 24px
+    );
+  }
+  .task-answer { border-left: 2pt solid #b8862a !important; background: none !important; }
+  .task-answer-label { color: #b8862a !important; }
 }
 
 /* ══════════════════════════════════════════════════════════════
