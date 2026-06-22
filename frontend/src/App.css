@@ -904,7 +904,23 @@ body {
 }
 @media (max-width: 900px) {
   .lesson-layout { grid-template-columns: 1fr; }
-  .lesson-aside-right { display: none; }
+  /* Don't hide the actions on mobile — turn them into a sticky bottom bar so
+     Print / Copy / Export / Back / answer-key stay reachable everywhere. */
+  .lesson-aside-right {
+    position: sticky; bottom: 0; top: auto;
+    flex-direction: row; flex-wrap: wrap;
+    gap: 8px;
+    padding: 10px 0;
+    margin-top: 16px;
+    background: var(--fog);
+    border-top: 1px solid var(--rule);
+    z-index: 20;
+  }
+  .lesson-aside-right .lesson-action-btn {
+    flex: 1 1 auto; width: auto; min-width: 110px;
+    justify-content: center;
+  }
+  .lesson-aside-right .lesson-action-btn:last-child { margin-top: 0 !important; }
 }
 
 /* Left rail */
