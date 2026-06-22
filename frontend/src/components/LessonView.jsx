@@ -74,7 +74,7 @@ function RegenerateBtn({ label, section, sessionId, sessionNumber, scaffolding, 
   )
 }
 
-export default function LessonView({ lesson: initialLesson, onBack, isQuick = false, sessionId = null }) {
+export default function LessonView({ lesson: initialLesson, onBack, isQuick = false, sessionId = null, readOnly = false }) {
   const [lesson, setLesson] = useState(initialLesson)
   const [flagging, setFlagging] = useState(false)
   const [flagShook, setFlagShook] = useState(false)
@@ -338,14 +338,16 @@ export default function LessonView({ lesson: initialLesson, onBack, isQuick = fa
 
         {/* ── Right rail — actions ── */}
         <aside className="lesson-aside-right" aria-label="Lesson actions">
-          <button
-            className={`lesson-action-btn lesson-action-btn--primary${saved ? ' lesson-action-btn--saved' : ''}`}
-            onClick={isQuick ? handleSave : undefined}
-            disabled={saved}
-            title={saved ? 'Saved to My Lessons' : 'Save to My Lessons'}
-          >
-            <span aria-hidden="true">{saved ? '✓' : '💾'}</span> {saved ? 'Saved' : 'Save'}
-          </button>
+          {!readOnly && (
+            <button
+              className={`lesson-action-btn lesson-action-btn--primary${saved ? ' lesson-action-btn--saved' : ''}`}
+              onClick={isQuick ? handleSave : undefined}
+              disabled={saved}
+              title={saved ? 'Saved to My Lessons' : 'Save to My Lessons'}
+            >
+              <span aria-hidden="true">{saved ? '✓' : '💾'}</span> {saved ? 'Saved' : 'Save'}
+            </button>
+          )}
           <button className="lesson-action-btn" onClick={() => window.print()}>
             <span aria-hidden="true">🖨</span> Print
           </button>

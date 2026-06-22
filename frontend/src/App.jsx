@@ -568,8 +568,8 @@ export default function App() {
             const kind = detectEntryKind(activeLesson)
             const back = () => setActiveLesson(null)
             if (kind === 'assignment') return <AssignmentView assignment={activeLesson} isQuick onBack={back} />
-            if (PROF_KINDS.has(kind)) return <ProfessorOutputView output={activeLesson} outputType={kind} onBack={back} />
-            return <LessonView lesson={activeLesson} isQuick onBack={back} />
+            if (PROF_KINDS.has(kind)) return <ProfessorOutputView output={activeLesson} outputType={kind} onBack={back} readOnly />
+            return <LessonView lesson={activeLesson} isQuick onBack={back} readOnly />
           })() : (
             <MyLessons
               onViewLesson={setActiveLesson}

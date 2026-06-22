@@ -237,7 +237,7 @@ const TYPE_LABELS = {
   question_bank: 'Question Bank',
 }
 
-export default function ProfessorOutputView({ output, outputType, onBack }) {
+export default function ProfessorOutputView({ output, outputType, onBack, readOnly = false }) {
   const [saved, setSaved] = useState(false)
 
   function handleSave() {
@@ -299,13 +299,15 @@ export default function ProfessorOutputView({ output, outputType, onBack }) {
 
         {/* Right rail */}
         <aside className="lesson-aside-right" aria-label="Output actions">
-          <button
-            className={`lesson-action-btn lesson-action-btn--primary${saved ? ' lesson-action-btn--saved' : ''}`}
-            onClick={handleSave}
-            disabled={saved}
-          >
-            {saved ? '✓ Saved' : '💾 Save'}
-          </button>
+          {!readOnly && (
+            <button
+              className={`lesson-action-btn lesson-action-btn--primary${saved ? ' lesson-action-btn--saved' : ''}`}
+              onClick={handleSave}
+              disabled={saved}
+            >
+              {saved ? '✓ Saved' : '💾 Save'}
+            </button>
+          )}
           <button className="lesson-action-btn" onClick={() => window.print()}>
             🖨 Print
           </button>
