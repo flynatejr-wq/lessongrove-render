@@ -17,10 +17,21 @@ async function handleResponse(res) {
   return res.json()
 }
 
+async function fetchWithColdStart(url, options) {
+  try {
+    return await fetch(url, options)
+  } catch (err) {
+    if (err.name === 'TypeError' && err.message.includes('fetch')) {
+      throw new Error('The server is waking up — this can take 30–60 seconds on the free tier. Please try again.')
+    }
+    throw err
+  }
+}
+
 export async function uploadPDF(file) {
   const form = new FormData()
   form.append('file', file)
-  return handleResponse(await fetch(`${BASE_URL}/upload`, {
+  return handleResponse(await fetchWithColdStart(`${BASE_URL}/upload`, {
     method: 'POST',
     headers: { ...(await authHeader()) },
     body: form,

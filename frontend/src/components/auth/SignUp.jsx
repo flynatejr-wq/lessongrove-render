@@ -200,6 +200,13 @@ export default function SignUp({ onComplete, onLogin, signupMode }) {
           Already have an account?{' '}
           <button className="landing-text-link" type="button" onClick={onLogin}>Log in →</button>
         </p>
+
+        <p className="landing-legal">
+          By signing up you agree to our{' '}
+          <a className="landing-legal-link" href="/terms.html" target="_blank" rel="noopener noreferrer">Terms of Service</a>
+          {' '}and{' '}
+          <a className="landing-legal-link" href="/privacy.html" target="_blank" rel="noopener noreferrer">Privacy Policy</a>.
+        </p>
       </div>
     </div>
   )

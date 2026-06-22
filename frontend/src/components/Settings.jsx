@@ -1,13 +1,17 @@
 import { useState } from 'react'
 
 const USER_TYPE_LABELS = { k12: 'K-12 Teacher', professor: 'College Professor', tutor: 'Tutor / Independent' }
-const LEVELS = [
-  { value: 'elementary', label: 'Elementary (K–5)' },
-  { value: 'middle', label: 'Middle School (6–8)' },
-  { value: 'high', label: 'High School (9–12)' },
-  { value: 'undergraduate', label: 'Undergraduate' },
-  { value: 'graduate', label: 'Graduate' },
+const ALL_LEVELS = [
+  { value: 'elementary',    label: 'Elementary (K–5)',   types: ['k12', 'tutor'] },
+  { value: 'middle',        label: 'Middle School (6–8)', types: ['k12', 'tutor'] },
+  { value: 'high',          label: 'High School (9–12)',  types: ['k12', 'tutor'] },
+  { value: 'undergraduate', label: 'Undergraduate',       types: ['professor', 'tutor'] },
+  { value: 'masters',       label: 'Graduate / Masters',  types: ['professor', 'tutor'] },
+  { value: 'phd',           label: 'PhD',                 types: ['professor', 'tutor'] },
 ]
+function getLevels(userType) {
+  return ALL_LEVELS.filter(l => l.types.includes(userType))
+}
 const STANDARDS = [
   { value: 'common_core', label: 'US Common Core' },
   { value: 'ngss', label: 'US Next Gen Science (NGSS)' },
@@ -18,7 +22,7 @@ const STANDARDS = [
   { value: 'none', label: 'None' },
 ]
 
-export default function Settings({ profile, theme, onSave, onThemeToggle, onClearHistory, onSignOut }) {
+export default function Settings({ profile, theme, onSave, onThemeToggle, onClearHistory, onSignOut, onDeleteAccount }) {
   const [userType, setUserType] = useState(profile?.userType || 'k12')
   const [subject, setSubject] = useState(profile?.subject || '')
   const [level, setLevel] = useState(profile?.level || '')
@@ -26,6 +30,12 @@ export default function Settings({ profile, theme, onSave, onThemeToggle, onClea
   const [scaffolding, setScaffolding] = useState(profile?.scaffolding || 'standard')
   const [saved, setSaved] = useState(false)
   const [confirmClear, setConfirmClear] = useState(false)
+  const [confirmDelete, setConfirmDelete] = useState(false)
+
+  function handleUserTypeChange(id) {
+    setUserType(id)
+    setLevel('') // reset level when type changes
+  }
 
   function handleSave(e) {
     e.preventDefault()
@@ -52,7 +62,7 @@ export default function Settings({ profile, theme, onSave, onThemeToggle, onClea
                     key={id}
                     type="button"
                     className={`settings-type-btn${userType === id ? ' settings-type-btn--active' : ''}`}
-                    onClick={() => setUserType(id)}
+                    onClick={() => handleUserTypeChange(id)}
                   >
                     {label}
                   </button>
@@ -82,7 +92,7 @@ export default function Settings({ profile, theme, onSave, onThemeToggle, onClea
                   onChange={e => setLevel(e.target.value)}
                 >
                   <option value="">Not set</option>
-                  {LEVELS.map(l => <option key={l.value} value={l.value}>{l.label}</option>)}
+                  {getLevels(userType).map(l => <option key={l.value} value={l.value}>{l.label}</option>)}
                 </select>
               </div>
 
@@ -174,6 +184,19 @@ export default function Settings({ profile, theme, onSave, onThemeToggle, onClea
           <button type="button" className="settings-clear-btn" onClick={onSignOut}>
             Sign out
           </button>
+          {!confirmDelete ? (
+            <button type="button" className="settings-clear-btn settings-clear-btn--delete" onClick={() => setConfirmDelete(true)}>
+              Delete account
+            </button>
+          ) : (
+            <div className="settings-confirm-row">
+              <span className="settings-confirm-text">This will permanently delete your account and all data. This cannot be undone.</span>
+              <button type="button" className="settings-clear-btn settings-clear-btn--confirm" onClick={onDeleteAccount}>
+                Yes, delete my account
+              </button>
+              <button type="button" className="btn-ghost" onClick={() => setConfirmDelete(false)}>Cancel</button>
+            </div>
+          )}
         </section>
 
       </div>

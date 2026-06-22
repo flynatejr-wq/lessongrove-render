@@ -14,6 +14,7 @@ import ScheduleGrid from './components/ScheduleGrid.jsx'
 import LessonView from './components/LessonView.jsx'
 import MyLessons from './components/MyLessons.jsx'
 import Settings from './components/Settings.jsx'
+import ResetPassword from './components/auth/ResetPassword.jsx'
 import { paceCurriculum, generateLessons, updateStructure, getCostEstimate } from './api.js'
 import { saveTermToHistory, getAllHistory, deleteFromHistory } from './history.js'
 
@@ -73,6 +74,7 @@ export default function App() {
   const [authScreen, setAuthScreen] = useState('landing') // 'landing' | 'signup' | 'login'
   const [signupMode, setSignupMode] = useState('quick')
   const [fromSignup, setFromSignup] = useState(false)
+  const [resetMode, setResetMode] = useState(false)
   const [page, setPage] = useState(PAGES.HOME)
   const [menuOpen, setMenuOpen] = useState(false)
   const [pageKey, setPageKey] = useState(0)
@@ -95,9 +97,10 @@ export default function App() {
       setUser(userFromSupabase(session?.user ?? null))
       setAuthReady(true)
     })
-    const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
       setUser(userFromSupabase(session?.user ?? null))
       setAuthReady(true)
+      if (event === 'PASSWORD_RECOVERY') setResetMode(true)
     })
     return () => subscription.unsubscribe()
   }, [])
@@ -114,6 +117,15 @@ export default function App() {
   }
 
   async function handleSignOut() {
+    await supabase.auth.signOut()
+    setUser(null)
+    setProfile(null)
+    setAuthScreen('landing')
+  }
+
+  async function handleDeleteAccount() {
+    try { localStorage.removeItem(PROFILE_KEY) } catch {}
+    try { localStorage.removeItem('lessongrove_history') } catch {}
     await supabase.auth.signOut()
     setUser(null)
     setProfile(null)
@@ -285,6 +297,15 @@ export default function App() {
     { key: 'lessons',   label: '3. Lessons',   active: fullStep === 'lesson' },
   ]
   const showBreadcrumb = page === PAGES.CURRICULUM && !['upload','uploading'].includes(fullStep)
+
+  // ── Password reset: Supabase sent user back with recovery token ──
+  if (authReady && resetMode) {
+    return (
+      <div className="app" data-theme={theme}>
+        <ResetPassword onDone={() => { setResetMode(false); window.history.replaceState(null, '', '/') }} />
+      </div>
+    )
+  }
 
   // ── Auth loading: wait for Supabase session check ────────────
   if (!authReady) {
@@ -470,6 +491,7 @@ export default function App() {
             onThemeToggle={toggleTheme}
             onClearHistory={handleClearHistory}
             onSignOut={handleSignOut}
+            onDeleteAccount={handleDeleteAccount}
           />
         )}
 

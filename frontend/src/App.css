@@ -2866,3 +2866,22 @@ body {
   background: #3a2810;
 }
 
+
+/* ── Legal footer on landing / signup ───────────────────────── */
+.landing-legal {
+  font-size: 11px;
+  color: var(--tx-3, var(--tx-2));
+  text-align: center;
+  margin: 14px 0 0;
+  line-height: 1.5;
+}
+.landing-legal-link {
+  color: var(--terra);
+  text-decoration: none;
+}
+.landing-legal-link:hover { text-decoration: underline; }
+
+/* ── ResetPassword: success card tint ────────────────────────── */
+.auth-card--success {
+  border-color: var(--terra);
+}

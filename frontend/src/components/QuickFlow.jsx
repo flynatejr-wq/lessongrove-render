@@ -6,6 +6,7 @@ import AssignmentView from './AssignmentView.jsx'
 import ProfessorOutputView from './ProfessorOutputView.jsx'
 import GeneratingLoader from './GeneratingLoader.jsx'
 import { quickLesson } from '../api.js'
+import { saveTermToHistory } from '../history.js'
 
 const ASSIGNMENT_TYPES = [
   { id: 'worksheet',         label: 'Worksheet',          desc: 'Structured questions guiding students through the content' },
@@ -107,6 +108,17 @@ export default function QuickFlow({ onBack, defaultScaffolding = 'standard' }) {
       setResult(res)
       setResultKind(outputType)
       setStep('result')
+      // Save to history so it appears in My Lessons
+      saveTermToHistory({
+        id: data.session_id,
+        filename: title,
+        savedAt: new Date().toISOString(),
+        weeks: 1,
+        sessionsPerWeek: 1,
+        scaffolding,
+        schedule: { total_sessions: 1, total_weeks: 1, sessions_per_week: 1, sessions: [] },
+        lessons: { 1: { ...res, session_number: 1, generated_at: new Date().toISOString() } },
+      })
     } catch (err) {
       setError(err.message)
       setStep('configure')
