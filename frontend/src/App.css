@@ -2790,6 +2790,22 @@ body {
   .landing-hero { padding: 40px 20px 60px; }
 }
 
+/* ── Mobile layout tightening (phones) ─────────────────────── */
+@media (max-width: 640px) {
+  .main { padding: 28px 18px; }
+  .header-inner { padding: 0 16px; gap: 10px; }
+  .logo-text { font-size: 17px; }
+  .step-title { font-size: 22px; }
+  .lesson-title { font-size: 26px; }
+  .lesson-aside-left { padding: 0; position: static; }
+  .quick-chapter-grid { grid-template-columns: 1fr; max-height: 300px; }
+  .quick-actions { flex-direction: column; align-items: stretch; }
+  .quick-actions .btn-primary,
+  .quick-actions .btn-ghost { width: 100%; justify-content: center; }
+  .quick-range { gap: 8px; }
+  .cost-estimate-banner { font-size: 12px; }
+}
+
 /* ── Auth dark mode overrides ─────────────────────────────── */
 [data-theme="dark"] .auth-page {
   background: var(--fog);
