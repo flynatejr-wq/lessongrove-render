@@ -178,6 +178,24 @@ body {
 /* ── HOME SCREEN ─────────────────────────────────────────────── */
 .home { animation: fadeUp 0.45s ease both; }
 
+.home-tip {
+  display: flex; align-items: flex-start; gap: 12px;
+  max-width: 720px; margin: 0 auto 8px;
+  padding: 14px 16px;
+  background: var(--terra-05);
+  border: 1px solid var(--terra-10);
+  border-left: 3px solid var(--terra);
+  border-radius: var(--radius);
+}
+.home-tip-icon { font-size: 18px; line-height: 1.4; flex-shrink: 0; }
+.home-tip-text { font-size: 13px; line-height: 1.55; color: var(--tx-2); margin: 0; }
+.home-tip-close {
+  background: none; border: none; cursor: pointer;
+  color: var(--tx-3); font-size: 20px; line-height: 1;
+  padding: 0 2px; flex-shrink: 0; align-self: flex-start;
+}
+.home-tip-close:hover { color: var(--tx-1); }
+
 .home-hero {
   text-align: center;
   padding: 24px 0 48px;
@@ -1514,6 +1532,10 @@ body {
 }
 .source-tab-icon { font-size: 14px; line-height: 1; }
 .source-tab-label { line-height: 1; }
+.source-tab--more {
+  border-style: dashed;
+  color: var(--tx-3);
+}
 
 .source-hint {
   font-size: 13px; color: var(--tx-2); margin-bottom: 16px; min-height: 18px;

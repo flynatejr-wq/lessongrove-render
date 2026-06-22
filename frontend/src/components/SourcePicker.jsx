@@ -4,14 +4,16 @@ import { uploadPDF, ingestText, ingestYoutube, ingestUrl, ingestDocx, ingestImag
 const SOURCE_TYPES = [
   { id: 'pdf',     label: 'PDF',        icon: '📄', hint: 'Textbook or any PDF document' },
   { id: 'text',    label: 'Text',       icon: '✏️', hint: 'Paste or type notes, articles, or any content' },
+  { id: 'image',   label: 'Image',      icon: '🖼', hint: 'Photo of a whiteboard, diagram, or textbook page' },
   { id: 'youtube', label: 'YouTube',    icon: '▶', hint: 'Paste a YouTube video link' },
   { id: 'url',     label: 'Web article',icon: '🔗', hint: 'Paste any webpage or article URL' },
   { id: 'docx',    label: 'Word doc',   icon: '📝', hint: 'Upload a .docx file' },
-  { id: 'image',   label: 'Image',      icon: '🖼', hint: 'Photo of a whiteboard, diagram, or textbook page' },
 ]
+const PRIMARY_IDS = ['pdf', 'text', 'image']
 
 export default function SourcePicker({ onIngested, onBack }) {
   const [sourceType, setSourceType] = useState('pdf')
+  const [showMore, setShowMore] = useState(false)
   const [text, setText] = useState('')
   const [textTitle, setTextTitle] = useState('')
   const [url, setUrl] = useState('')
@@ -104,9 +106,9 @@ export default function SourcePicker({ onIngested, onBack }) {
 
   return (
     <div className="source-picker">
-      {/* Type tabs */}
+      {/* Type tabs — lead with the common sources, tuck the rest behind "More" */}
       <div className="source-tabs" role="tablist" aria-label="Source type">
-        {SOURCE_TYPES.map(s => (
+        {SOURCE_TYPES.filter(s => PRIMARY_IDS.includes(s.id) || showMore).map(s => (
           <button
             key={s.id}
             role="tab"
@@ -118,6 +120,17 @@ export default function SourcePicker({ onIngested, onBack }) {
             <span className="source-tab-label">{s.label}</span>
           </button>
         ))}
+        {!showMore && (
+          <button
+            type="button"
+            className="source-tab source-tab--more"
+            onClick={() => setShowMore(true)}
+            aria-label="Show more source types"
+          >
+            <span className="source-tab-icon" aria-hidden="true">⋯</span>
+            <span className="source-tab-label">More</span>
+          </button>
+        )}
       </div>
 
       <p className="source-hint">{selected.hint}</p>

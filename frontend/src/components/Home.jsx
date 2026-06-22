@@ -1,8 +1,32 @@
+import { useState } from 'react'
 import { hasHistory } from '../history.js'
 
+const TIP_KEY = 'lg_home_tip_dismissed'
+
 export default function Home({ onQuick, onFull, onHistory }) {
+  const [showTip, setShowTip] = useState(() => {
+    try { return !localStorage.getItem(TIP_KEY) } catch { return false }
+  })
+
+  function dismissTip() {
+    setShowTip(false)
+    try { localStorage.setItem(TIP_KEY, '1') } catch {}
+  }
+
   return (
     <div className="home">
+      {showTip && (
+        <div className="home-tip" role="note">
+          <span className="home-tip-icon" aria-hidden="true">👋</span>
+          <p className="home-tip-text">
+            <strong>New here?</strong> Pick <strong>Quick Lesson</strong> for a single class, or{' '}
+            <strong>Full Curriculum</strong> to plan a whole term. Every guide is built from your own
+            materials — nothing from the open internet.
+          </p>
+          <button className="home-tip-close" onClick={dismissTip} aria-label="Dismiss tip">×</button>
+        </div>
+      )}
+
       <div className="home-hero">
         <h1 className="home-motto">
           Plan today's class,<br />
