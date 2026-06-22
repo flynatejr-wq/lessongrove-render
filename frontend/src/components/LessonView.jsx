@@ -3,16 +3,17 @@ import { flagLesson, regenerateSection } from '../api.js'
 
 const SCAFFOLD_LABELS = { light: 'Light support', standard: 'Standard', heavy: 'Heavy support' }
 
-function ExportMarkdown({ lesson }) {
+function ExportMarkdown({ lesson, showAnswers }) {
   function download() {
     const lines = [
       `# ${lesson.title}`,
       `**Source:** ${lesson.page_range}`,
       lesson.standards_framework ? `**Standards:** ${lesson.standards_framework}` : '',
       lesson.scaffolding_level ? `**Scaffolding:** ${SCAFFOLD_LABELS[lesson.scaffolding_level] || lesson.scaffolding_level}` : '',
+      showAnswers ? '**Teacher copy — includes answer key**' : '',
       '',
       '## Learning Objectives',
-      ...lesson.learning_objectives.map((o, i) => `${i + 1}. ${o}`),
+      ...lesson.learning_objectives.map((o, i) => `${i + 1}. ${typeof o === 'string' ? o : o.text}`),
       '',
       '## Key Concepts',
       ...lesson.key_concepts.map(kc => `**${kc.term}:** ${kc.definition}`),
@@ -24,7 +25,10 @@ function ExportMarkdown({ lesson }) {
       ].join('\n')),
       '',
       '## Assessment Questions',
-      ...lesson.assessment_questions.map((q, i) => `${i + 1}. *[${q.type.replace('_', ' ')}]* ${q.question}`),
+      ...lesson.assessment_questions.map((q, i) =>
+        `${i + 1}. *[${q.type.replace('_', ' ')}]* ${q.question}`
+        + (showAnswers && q.answer ? `\n   _Answer:_ ${q.answer}` : '')
+      ),
       lesson.homework ? `\n## Homework\n${lesson.homework}` : '',
     ].filter(l => l !== '').join('\n')
 
@@ -82,7 +86,10 @@ export default function LessonView({ lesson: initialLesson, onBack, isQuick = fa
   const [flagSent, setFlagSent] = useState(false)
   const [flagErr, setFlagErr] = useState(null)
   const [copied, setCopied] = useState(false)
+  const [showAnswers, setShowAnswers] = useState(false)
   const [regenSection, setRegenSection] = useState(null)
+
+  const hasAnswers = lesson.assessment_questions?.some(q => q.answer)
 
   function handleFlagClick() {
     setFlagging(true)
@@ -121,7 +128,7 @@ export default function LessonView({ lesson: initialLesson, onBack, isQuick = fa
       'CLASSROOM ACTIVITIES',
       ...lesson.activities.map(a => `• ${a.title}${a.duration_minutes ? ` (${a.duration_minutes} min)` : ''}\n  ${a.description}`), '',
       'ASSESSMENT QUESTIONS',
-      ...lesson.assessment_questions.map((q, i) => `${i + 1}. [${q.type}] ${q.question}`),
+      ...lesson.assessment_questions.map((q, i) => `${i + 1}. [${q.type}] ${q.question}${showAnswers && q.answer ? `\n   Answer: ${q.answer}` : ''}`),
       lesson.homework ? `\nHOMEWORK\n${lesson.homework}` : '',
     ].filter(l => l !== '').join('\n')
     navigator.clipboard?.writeText(lines).then(() => { setCopied(true); setTimeout(() => setCopied(false), 2000) }).catch(() => {})
@@ -266,6 +273,12 @@ export default function LessonView({ lesson: initialLesson, onBack, isQuick = fa
                         <span className={`question-type question-type--${q.type}`}>{q.type.replace('_', ' ')}</span>
                         {q.page_ref && <span className="source-cite">p. {q.page_ref}</span>}
                       </div>
+                      {showAnswers && q.answer && (
+                        <div className="task-answer">
+                          <span className="task-answer-label">Answer</span>
+                          <span className="task-answer-text">{q.answer}</span>
+                        </div>
+                      )}
                     </li>
                   ))}
                 </ol>
@@ -331,13 +344,22 @@ export default function LessonView({ lesson: initialLesson, onBack, isQuick = fa
               <span aria-hidden="true">✓</span> Saved to My Lessons
             </div>
           )}
+          {hasAnswers && (
+            <button
+              className={`lesson-action-btn${showAnswers ? ' lesson-action-btn--keyon' : ''}`}
+              onClick={() => setShowAnswers(s => !s)}
+              aria-pressed={showAnswers}
+            >
+              <span aria-hidden="true">🔑</span> {showAnswers ? 'Hide answer key' : 'Show answer key'}
+            </button>
+          )}
           <button className="lesson-action-btn" onClick={() => window.print()}>
-            <span aria-hidden="true">🖨</span> Print
+            <span aria-hidden="true">🖨</span> Print {showAnswers ? '(teacher copy)' : ''}
           </button>
           <button className="lesson-action-btn" onClick={handleCopy}>
             <span aria-hidden="true">{copied ? '✓' : '📋'}</span> {copied ? 'Copied!' : 'Copy text'}
           </button>
-          <ExportMarkdown lesson={lesson} />
+          <ExportMarkdown lesson={lesson} showAnswers={showAnswers} />
           <button className="lesson-action-btn" onClick={onBack} style={{ marginTop: 8 }}>
             ← Back
           </button>

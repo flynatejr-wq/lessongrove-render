@@ -1032,7 +1032,30 @@ body {
 .activity-desc { font-size: 13px; color: var(--tx-2); line-height: 1.6; margin: 0; }
 
 .question-list { list-style: none; padding: 0; display: flex; flex-direction: column; gap: 10px; }
-.question-item { display: flex; align-items: flex-start; gap: 10px; }
+.question-item { display: flex; align-items: flex-start; gap: 10px; flex-wrap: wrap; }
+
+/* Answer key block (assignments + lesson assessment questions) */
+.task-answer {
+  width: 100%; flex-basis: 100%;
+  margin-top: 8px;
+  padding: 10px 12px;
+  background: color-mix(in srgb, var(--ember) 8%, var(--card));
+  border-left: 3px solid var(--ember);
+  border-radius: 0 var(--radius-sm) var(--radius-sm) 0;
+}
+.task-answer-label {
+  display: inline-block; margin-right: 8px;
+  font-size: 10px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.06em;
+  color: var(--ember);
+}
+.task-answer-text { font-size: 13px; color: var(--tx-1); line-height: 1.55; }
+
+/* Answer-key toggle in the active (on) state */
+.lesson-action-btn--keyon {
+  background: color-mix(in srgb, var(--ember) 12%, var(--card));
+  border-color: var(--ember);
+  color: var(--ember);
+}
 .question-text { font-size: 14px; color: var(--tx-1); line-height: 1.55; flex: 1; }
 .question-type {
   font-size: 9px; font-weight: 700;

@@ -135,6 +135,7 @@ class Activity(BaseModel):
 class AssessmentQuestion(BaseModel):
     question: str
     type: str  # "discussion" | "written" | "short_answer"
+    answer: str | None = None  # model answer / key points (teacher answer key)
     page_ref: int | None = None
 
 
@@ -211,6 +212,7 @@ class FlagLessonResponse(BaseModel):
 class AssignmentTask(BaseModel):
     number: int
     prompt: str
+    answer: str | None = None  # model answer / solution (teacher answer key)
     page_ref: int | None = None
 
 

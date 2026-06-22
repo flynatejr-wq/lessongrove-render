@@ -89,7 +89,7 @@ _LESSON_SCHEMA = """
   "learning_objectives": [{"text": "string", "page_ref": integer_or_null}, "..."],
   "key_concepts": [{"term": "string", "definition": "string", "page_ref": integer_or_null}, "..."],
   "activities": [{"title": "string", "description": "string", "duration_minutes": integer_or_null, "page_ref": integer_or_null}, "..."],
-  "assessment_questions": [{"question": "string", "type": "discussion|written|short_answer", "page_ref": integer_or_null}, "..."],
+  "assessment_questions": [{"question": "string", "type": "discussion|written|short_answer", "answer": "string — model answer or key points a strong response should cover", "page_ref": integer_or_null}, "..."],
   "homework": "string or null"
 }
 """
@@ -116,7 +116,7 @@ INSTRUCTIONS
 3. Include 3–5 learning objectives (what students will be able to do after this lesson).
 4. Include 4–8 key concepts with definitions drawn directly from the text.
 5. Include 2–4 classroom activities with realistic time estimates.
-6. Include 4–6 assessment questions. Mark discussion questions as "discussion", written prompts as "written", recall/comprehension as "short_answer".
+6. Include 4–6 assessment questions. Mark discussion questions as "discussion", written prompts as "written", recall/comprehension as "short_answer". For EACH question, provide an "answer": the correct/model answer for factual questions, or for open-ended/discussion questions, the key points a strong response should cover. Ground every answer strictly in the excerpt.
 7. Optionally include one homework assignment grounded in the text, or null.
 8. For EVERY item in learning_objectives, activities, and assessment_questions, set page_ref to the exact page number in the excerpt where that content appears. If it spans multiple pages, use the first. If unsure, use null.
 9. Apply the scaffolding level above consistently across all sections.
@@ -153,7 +153,7 @@ _SECTION_SCHEMAS = {
     "learning_objectives": '{"learning_objectives": [{"text": "string", "page_ref": integer_or_null}, "..."]}',
     "key_concepts": '{"key_concepts": [{"term": "string", "definition": "string", "page_ref": integer_or_null}, "..."]}',
     "activities": '{"activities": [{"title": "string", "description": "string", "duration_minutes": integer_or_null, "page_ref": integer_or_null}, "..."]}',
-    "assessment_questions": '{"assessment_questions": [{"question": "string", "type": "discussion|written|short_answer", "page_ref": integer_or_null}, "..."]}',
+    "assessment_questions": '{"assessment_questions": [{"question": "string", "type": "discussion|written|short_answer", "answer": "string — model answer or key points", "page_ref": integer_or_null}, "..."]}',
     "homework": '{"homework": "string or null"}',
 }
 
@@ -161,7 +161,7 @@ _SECTION_INSTRUCTIONS = {
     "learning_objectives": "Include 3–5 objectives (what students will be able to do).",
     "key_concepts": "Include 4–8 key concepts with definitions drawn from the text.",
     "activities": "Include 2–4 classroom activities with time estimates in minutes.",
-    "assessment_questions": "Include 4–6 questions spanning recall, application, and analysis.",
+    "assessment_questions": "Include 4–6 questions spanning recall, application, and analysis. For each, include an \"answer\" (model answer or key points a strong response covers), grounded in the excerpt.",
     "homework": "One homework assignment grounded in the text, or null.",
 }
 
@@ -238,7 +238,7 @@ _ASSIGNMENT_SCHEMA = """
   "title": "string — concise assignment title",
   "overview": "string — 2-3 sentence teacher-facing description of what students will do and why",
   "tasks": [
-    {"number": 1, "prompt": "string — the actual student-facing task or question", "page_ref": integer_or_null},
+    {"number": 1, "prompt": "string — the actual student-facing task or question", "answer": "string — the model answer / worked solution for the teacher's answer key", "page_ref": integer_or_null},
     ...
   ]
 }
@@ -271,8 +271,9 @@ INSTRUCTIONS
 2. Do NOT introduce any facts, examples, or content not present in the excerpt.
 3. {type_instruction}
 4. For each task, set page_ref to the page/chunk number in the excerpt where that content appears (or null if it spans multiple sections).
-5. Apply the scaffolding level consistently — adjust difficulty, complexity, and support offered accordingly.
-6. The assignment must be entirely student-facing (not a lesson plan).
+5. For each task, provide an "answer": the model answer or worked solution (for the teacher's answer key). For open-ended or discussion tasks, give the key points a strong response should cover. Ground every answer strictly in the excerpt.
+6. Apply the scaffolding level consistently — adjust difficulty, complexity, and support offered accordingly.
+7. The task prompts must be entirely student-facing (the answers are for the teacher only).
 
 Return ONLY valid JSON matching this schema — no markdown fences, no extra text:
 {schema}

@@ -9,13 +9,14 @@ const TYPE_LABELS = {
 
 const SCAFFOLD_LABELS = { light: 'Light support', standard: 'Standard', heavy: 'Heavy support' }
 
-function ExportMarkdown({ assignment }) {
+function ExportMarkdown({ assignment, showAnswers }) {
   function download() {
     const lines = [
       `# ${assignment.title}`,
       `**Type:** ${TYPE_LABELS[assignment.assignment_type] || assignment.assignment_type}`,
       `**Source:** ${assignment.source_ref}`,
       assignment.scaffolding_level ? `**Scaffolding:** ${SCAFFOLD_LABELS[assignment.scaffolding_level] || assignment.scaffolding_level}` : '',
+      showAnswers ? '**Teacher copy — includes answer key**' : '',
       '',
       assignment.overview,
       '',
@@ -23,6 +24,7 @@ function ExportMarkdown({ assignment }) {
       '',
       ...assignment.tasks.map(t =>
         `**${t.number}.** ${t.prompt}${t.page_ref ? `  *(p. ${t.page_ref})*` : ''}`
+        + (showAnswers && t.answer ? `\n\n   _Answer:_ ${t.answer}` : '')
       ),
     ].filter(l => l !== '').join('\n')
 
@@ -43,16 +45,19 @@ function ExportMarkdown({ assignment }) {
 
 export default function AssignmentView({ assignment, onBack, isQuick = false }) {
   const [copied, setCopied] = useState(false)
+  const [showAnswers, setShowAnswers] = useState(false)
   const [flagging, setFlagging] = useState(false)
   const [flagReason, setFlagReason] = useState('')
   const [flagSent, setFlagSent] = useState(false)
+
+  const hasAnswers = assignment.tasks?.some(t => t.answer)
 
   function handleCopy() {
     const lines = [
       assignment.title, '',
       assignment.overview, '',
       '---', '',
-      ...assignment.tasks.map(t => `${t.number}. ${t.prompt}`),
+      ...assignment.tasks.map(t => `${t.number}. ${t.prompt}${showAnswers && t.answer ? `\n   Answer: ${t.answer}` : ''}`),
     ].join('\n')
     navigator.clipboard?.writeText(lines).then(() => {
       setCopied(true); setTimeout(() => setCopied(false), 2000)
@@ -123,6 +128,12 @@ export default function AssignmentView({ assignment, onBack, isQuick = false }) 
                     {task.page_ref && (
                       <span className="source-cite">p. {task.page_ref}</span>
                     )}
+                    {showAnswers && task.answer && (
+                      <div className="task-answer">
+                        <span className="task-answer-label">Answer</span>
+                        <span className="task-answer-text">{task.answer}</span>
+                      </div>
+                    )}
                   </li>
                 ))}
               </ol>
@@ -168,13 +179,22 @@ export default function AssignmentView({ assignment, onBack, isQuick = false }) 
 
         {/* Right rail — actions */}
         <aside className="lesson-aside-right" aria-label="Assignment actions">
+          {hasAnswers && (
+            <button
+              className={`lesson-action-btn${showAnswers ? ' lesson-action-btn--keyon' : ''}`}
+              onClick={() => setShowAnswers(s => !s)}
+              aria-pressed={showAnswers}
+            >
+              <span aria-hidden="true">🔑</span> {showAnswers ? 'Hide answer key' : 'Show answer key'}
+            </button>
+          )}
           <button className="lesson-action-btn lesson-action-btn--primary" onClick={() => window.print()}>
-            <span aria-hidden="true">🖨</span> Print
+            <span aria-hidden="true">🖨</span> Print {showAnswers ? '(teacher copy)' : ''}
           </button>
           <button className="lesson-action-btn" onClick={handleCopy}>
             <span aria-hidden="true">{copied ? '✓' : '📋'}</span> {copied ? 'Copied!' : 'Copy text'}
           </button>
-          <ExportMarkdown assignment={assignment} />
+          <ExportMarkdown assignment={assignment} showAnswers={showAnswers} />
           <button className="lesson-action-btn" onClick={onBack} style={{ marginTop: 8 }}>
             ← Back
           </button>
