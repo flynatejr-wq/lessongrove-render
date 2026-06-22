@@ -41,14 +41,19 @@ const USER_TYPES = [
   },
 ]
 
-const LEVELS = [
-  { value: '', label: 'Student level…' },
-  { value: 'elementary', label: 'Elementary (K–5)' },
-  { value: 'middle', label: 'Middle School (6–8)' },
-  { value: 'high', label: 'High School (9–12)' },
-  { value: 'undergraduate', label: 'Undergraduate' },
-  { value: 'graduate', label: 'Graduate' },
+const ALL_LEVELS = [
+  { value: 'elementary',    label: 'Elementary (K–5)',   types: ['k12', 'tutor'] },
+  { value: 'middle',        label: 'Middle School (6–8)', types: ['k12', 'tutor'] },
+  { value: 'high',          label: 'High School (9–12)',  types: ['k12', 'tutor'] },
+  { value: 'undergraduate', label: 'Undergraduate',       types: ['professor', 'tutor'] },
+  { value: 'masters',       label: 'Graduate / Masters',  types: ['professor', 'tutor'] },
+  { value: 'phd',           label: 'PhD',                 types: ['professor', 'tutor'] },
 ]
+
+function getLevels(userType) {
+  if (!userType) return []
+  return ALL_LEVELS.filter(l => l.types.includes(userType))
+}
 
 const STANDARDS = [
   { value: '', label: 'Standards framework…' },
@@ -66,6 +71,11 @@ export default function Onboarding({ onComplete }) {
   const [subject, setSubject] = useState('')
   const [level, setLevel] = useState('')
   const [standards, setStandards] = useState('')
+
+  function handleSelectType(id) {
+    setSelected(id)
+    setLevel('') // reset level when type changes
+  }
 
   function handleSubmit(e) {
     e.preventDefault()
@@ -90,7 +100,7 @@ export default function Onboarding({ onComplete }) {
                 role="radio"
                 aria-checked={selected === t.id}
                 className={`user-type-card${selected === t.id ? ' user-type-card--selected' : ''}`}
-                onClick={() => setSelected(t.id)}
+                onClick={() => handleSelectType(t.id)}
               >
                 <span className="user-type-icon">{t.icon}</span>
                 <span className="user-type-title">{t.title}</span>
@@ -125,7 +135,8 @@ export default function Onboarding({ onComplete }) {
                   onChange={e => setLevel(e.target.value)}
                   aria-label="Student level"
                 >
-                  {LEVELS.map(l => <option key={l.value} value={l.value}>{l.label}</option>)}
+                  <option value="">Student level…</option>
+                  {getLevels(selected).map(l => <option key={l.value} value={l.value}>{l.label}</option>)}
                 </select>
                 <select
                   className="onboarding-select"
