@@ -55,5 +55,12 @@ def get_current_user(
         raise HTTPException(status_code=401, detail="Session expired. Please log in again.")
     except HTTPException:
         raise
-    except Exception:
-        raise HTTPException(status_code=401, detail="Invalid token.")
+    except Exception as e:
+        # TEMPORARY DIAGNOSTIC — surfaces why verification failed. Remove after debugging.
+        try:
+            hdr = jwt.get_unverified_header(credentials.credentials)
+            body = jwt.decode(credentials.credentials, options={"verify_signature": False})
+            info = f"alg={hdr.get('alg')} kid={hdr.get('kid')} iss={body.get('iss')} aud={body.get('aud')}"
+        except Exception as e2:
+            info = f"unparseable token: {e2!r}"
+        raise HTTPException(status_code=401, detail=f"Invalid token. [{type(e).__name__}: {e}] [{info}]")
