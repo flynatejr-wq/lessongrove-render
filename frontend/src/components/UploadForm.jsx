@@ -4,10 +4,18 @@ import { uploadPDF } from '../api.js'
 export default function UploadForm({ onResult, disabled }) {
   const [dragging, setDragging] = useState(false)
   const [file, setFile] = useState(null)
+  const [pickErr, setPickErr] = useState(null)
   const inputRef = useRef(null)
 
   function pick(f) {
-    if (f?.name.toLowerCase().endsWith('.pdf')) setFile(f)
+    if (!f) return
+    if (f.name.toLowerCase().endsWith('.pdf')) {
+      setFile(f)
+      setPickErr(null)
+    } else {
+      setFile(null)
+      setPickErr(`"${f.name}" isn't a PDF. The full curriculum needs a PDF textbook — for other file types, use Quick Lesson.`)
+    }
   }
 
   async function handleSubmit(e) {
@@ -58,6 +66,8 @@ export default function UploadForm({ onResult, disabled }) {
           </div>
         )}
       </div>
+
+      {pickErr && <p className="error-banner" role="alert" style={{ marginTop: 10 }}>{pickErr}</p>}
 
       <button
         className="btn-primary" type="submit"
