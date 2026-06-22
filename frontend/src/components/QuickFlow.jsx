@@ -328,7 +328,19 @@ export default function QuickFlow({ onBack, defaultScaffolding = 'standard' }) {
           </div>
         </div>
 
-        {error && <p className="error-banner" role="alert" style={{ marginTop: 12 }}>{error}</p>}
+        {error && (
+          <div className="error-banner error-banner--action" role="alert" style={{ marginTop: 12 }}>
+            <span>{error}</span>
+            {lastGen && (
+              <button
+                className="error-retry-btn"
+                onClick={() => { setError(null); runGeneration(lastGen.start, lastGen.end, lastGen.title) }}
+              >
+                Try again →
+              </button>
+            )}
+          </div>
+        )}
 
         <div className="quick-actions">
           <button

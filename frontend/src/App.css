@@ -499,6 +499,19 @@ body {
   font-size: 13px; color: #6b2d10;
   line-height: 1.5;
 }
+.error-banner--action {
+  display: flex; align-items: center; gap: 12px; flex-wrap: wrap;
+  justify-content: space-between;
+}
+.error-retry-btn {
+  flex-shrink: 0;
+  padding: 7px 14px;
+  background: var(--terra); color: #fff;
+  border: none; border-radius: var(--radius-sm);
+  font-size: 13px; font-weight: 600; font-family: var(--font-body);
+  cursor: pointer; white-space: nowrap;
+}
+.error-retry-btn:hover { background: var(--terra-dk); }
 .warn-banner {
   padding: 10px 14px;
   background: rgba(181,86,47,0.06);
@@ -729,7 +742,7 @@ body {
 .gen-done-note { font-size: 12px; color: var(--bark); }
 
 /* Grid wrapper — scrolls horizontally on narrow screens */
-.schedule-grid-wrap { overflow-x: auto; }
+.schedule-grid-wrap { overflow-x: auto; -webkit-overflow-scrolling: touch; }
 
 .schedule-grid {
   display: grid;
@@ -904,6 +917,9 @@ body {
 }
 @media (max-width: 900px) {
   .lesson-layout { grid-template-columns: 1fr; }
+  /* Content-first on mobile: the left rail is supplementary metadata (page range
+     is already shown in the content header), so hide it on small screens. */
+  .lesson-aside-left { display: none; }
   /* Don't hide the actions on mobile — turn them into a sticky bottom bar so
      Print / Copy / Export / Back / answer-key stay reachable everywhere. */
   .lesson-aside-right {
